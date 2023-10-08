@@ -50,3 +50,11 @@ CPackSourceConfig.cmake
 /.vs/
 *.sqlite
 .DS_Store
+
+# caches / generated
+.cache
+compile_commands.json
+
+# local es stuff
+es_systems.cfg
+userdata

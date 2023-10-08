@@ -23,6 +23,7 @@
 #include "GuiGameAchievements.h"
 #include "guis/GuiGameOptions.h"
 #include "views/gamelist/ISimpleGameListView.h"
+#include "guis/GuiTagsManager.h"
 
 std::vector<std::string> GuiGamelistOptions::gridSizes {
 	"automatic", 
@@ -65,6 +66,8 @@ GuiGamelistOptions::GuiGamelistOptions(Window* window, IGameListView* gamelist, 
 
 		if (!Settings::getInstance()->getBool("ForceDisableFilters"))
 		{
+			mMenu.addEntry(_("TAGS MANAGER"), true, std::bind(&GuiGamelistOptions::openTagsManager, this));			
+
 			addTextFilterToMenu();
 
 			std::string filterInfo;
@@ -418,6 +421,14 @@ void GuiGamelistOptions::openGamelistFilter()
 	mFiltersChanged = true;
 	GuiGamelistFilter* ggf = new GuiGamelistFilter(mWindow, mSystem);
 	mWindow->pushGui(ggf);
+}
+
+void GuiGamelistOptions::openTagsManager()
+{
+	mReloadAll = false;
+	mFiltersChanged = true;
+	GuiTagsManager* gtm = new GuiTagsManager(mWindow, mSystem);
+	mWindow->pushGui(gtm);
 }
 
 std::string GuiGamelistOptions::getCustomCollectionName()

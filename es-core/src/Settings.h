@@ -98,6 +98,9 @@ public:
 	const std::set<std::string>& getKnownTags();
 	std::string knownTagsToString();
 
+	const std::string getCurrentTag();
+	bool setCurrentTag(std::string& value);
+
 	void addIncludeTag(const std::string& value);
 	void removeIncludeTag(const std::string& value);
 	const std::set<std::string>& getIncludeTags();
@@ -173,6 +176,7 @@ private:
 	std::set<std::string> mKnownTags;
 	std::map<std::string, TagRuleSet*> mTagRuleSets;
 	TagRuleSet* mCurrentTagRuleSet;
+	std::string mCurrentTag;
 
 	TagRuleSet* getOrCreateTagRuleSet(const std::string& name);
 };

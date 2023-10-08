@@ -29,6 +29,7 @@ private:
 	
 	void addTextFilterToMenu();
 	void openGamelistFilter();
+	void openTagsManager();
 	void openMetaDataEd();	
 	void jumpToLetter();
 	void editCollectionFilters();

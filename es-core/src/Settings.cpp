@@ -442,6 +442,10 @@ bool Settings::saveFile()
 			knownTagsNode.append_child("known-tag").text().set(tag.c_str());
 		}
 	}	
+	if (!mCurrentTag.empty())
+	{
+		config.append_child("current-tag").text().set(mCurrentTag.c_str());
+	}
 	for (auto entry : mTagRuleSets)
 	{
 		// Don't bother writing default rule set if it's at defaults (ie. empty)
@@ -494,10 +498,10 @@ void Settings::loadFile()
 		setString(node.attribute("name").as_string(), node.attribute("value").as_string());
 
 	for(pugi::xml_node knownTagsNode = root.child("known-tags"); knownTagsNode; knownTagsNode = knownTagsNode.next_sibling("known-tags"))
-	{
 		for(pugi::xml_node node = knownTagsNode.child("known-tag"); node; node = node.next_sibling("known-tag"))
 			addKnownTag(node.text().as_string());
-	}
+	for(pugi::xml_node currentTagNode = root.child("current-tag"); currentTagNode; currentTagNode = currentTagNode.next_sibling("current-tag"))
+		mCurrentTag = currentTagNode.text().as_string();
 	for(pugi::xml_node tagRuleSetNode = root.child("tag-rule-set"); tagRuleSetNode; tagRuleSetNode = tagRuleSetNode.next_sibling("tag-rule-set"))
 	{
 		pugi::xml_node nameNode = tagRuleSetNode.child("name");
@@ -613,6 +617,18 @@ std::string Settings::knownTagsToString()
 
 	if (!s.empty()) s.pop_back();
 	return s;
+}
+
+const std::string Settings::getCurrentTag()
+{
+	return mCurrentTag;
+}
+
+bool Settings::setCurrentTag(std::string& value)
+{
+	mWasChanged = value != mCurrentTag;
+	mCurrentTag = value;
+	return mWasChanged;
 }
 
 void Settings::addIncludeTag(const std::string& value)

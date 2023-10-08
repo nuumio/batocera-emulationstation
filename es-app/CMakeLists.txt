@@ -77,6 +77,7 @@ set(ES_HEADERS
 	${CMAKE_CURRENT_SOURCE_DIR}/src/guis/GuiGameAchievements.h		
 	${CMAKE_CURRENT_SOURCE_DIR}/src/guis/GuiSaveState.h
 	${CMAKE_CURRENT_SOURCE_DIR}/src/guis/GuiFileBrowser.h	
+	${CMAKE_CURRENT_SOURCE_DIR}/src/guis/GuiTagsManager.h
 	
     # Scrapers
     ${CMAKE_CURRENT_SOURCE_DIR}/src/scrapers/Scraper.h
@@ -181,6 +182,7 @@ set(ES_SOURCES
 	${CMAKE_CURRENT_SOURCE_DIR}/src/guis/GuiGameAchievements.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/src/guis/GuiSaveState.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/src/guis/GuiFileBrowser.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/src/guis/GuiTagsManager.cpp
 
     # Scrapers
     ${CMAKE_CURRENT_SOURCE_DIR}/src/scrapers/Scraper.cpp

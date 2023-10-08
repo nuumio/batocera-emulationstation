@@ -3,6 +3,7 @@
 #define ES_CORE_SETTINGS_H
 
 #include <map>
+#include <set>
 #include <string>
 #include <vector>
 #include "utils/Delegate.h"
@@ -63,6 +64,21 @@ public:
 	bool setString(const std::string& name, const std::string& value);
 
 	std::map<std::string, std::string>& getStringMap() { return mStringMap; }
+
+	void addKnownTag(const std::string& value);
+	void addKnownTags(const std::set<std::string>& value);
+	void removeKnownTag(const std::string& value);
+	bool isKnownTag(const std::string& value);
+	const std::set<std::string>& getKnownTags();
+	std::string knownTagsToString();
+
+	void addIncludeTag(const std::string& value);
+	void removeIncludeTag(const std::string& value);
+	const std::set<std::string>& getIncludeTags();
+	void addExcludeTag(const std::string& value);
+	void removeExcludeTag(const std::string& value);
+	const std::set<std::string>& getExcludeTags();
+	bool canInclude(const std::set<std::string>& tags);
 
 	// Cached settings using static fields. They must be implemented using IMPLEMENT_STATIC_xx_SETTING & updated with UPDATE_STATIC_xxx_SETTING
 	DECLARE_STATIC_BOOL_SETTING(DebugText)
@@ -126,6 +142,13 @@ private:
 
 	bool mLoaded;
 	void updateCachedSetting(const std::string& name);
+
+	// All known tags
+	std::set<std::string> mKnownTags;
+	// Include tags, include items with these tags (unless empty)
+	std::set<std::string> mIncludeTags;
+	// Exclude tags, exclude items with these tags
+	std::set<std::string> mExcludeTags;
 };
 
 #endif // ES_CORE_SETTINGS_H

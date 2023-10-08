@@ -3,6 +3,7 @@
 #define ES_APP_META_DATA_H
 
 #include <map>
+#include <set>
 #include <vector>
 #include <functional>
 #include <string>
@@ -174,6 +175,11 @@ public:
 	void setScrapeDate(const std::string& scraper);
 	Utils::Time::DateTime* getScrapeDate(const std::string& scraper);
 
+	void addTag(const std::string& value) { mTags.insert(value); };
+	void removeTag(const std::string& value) { mTags.erase(value); };
+	bool hasTag(const std::string& value) { return mTags.find(value) != mTags.end(); };
+	const std::set<std::string>& getTags() { return mTags; };
+
 private:
 	std::map<int, Utils::Time::DateTime> mScrapeDates;
 
@@ -186,6 +192,9 @@ private:
 	static std::vector<MetaDataDecl> mMetaDataDecls;
 
 	std::vector<std::tuple<std::string, std::string, bool>> mUnKnownElements;
+
+	// Tags for this metadata
+	std::set<std::string> mTags;
 };
 
 #endif // ES_APP_META_DATA_H

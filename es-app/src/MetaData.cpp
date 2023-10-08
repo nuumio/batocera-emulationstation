@@ -181,6 +181,20 @@ void MetaDataList::loadFromXML(MetaDataListType type, pugi::xml_node& node, Syst
 								
 			continue;
 		}
+		if (name == "tags")
+		{
+			pugi::xml_node tagsNode = xelement;
+			for (pugi::xml_node tagNode : tagsNode.children())
+			{
+				name = tagNode.name();
+				if (name != "tag") continue;
+				value = tagNode.text().get();
+				addTag(value);
+				// All known tags will be updated later because here we could be
+				// running in separate threads and don't want to deal with locks.
+			}
+			continue;
+		}
 
 		auto it = mGameIdMap.find(name);
 		if (it == mGameIdMap.cend())
@@ -312,6 +326,15 @@ void MetaDataList::appendToXML(pugi::xml_node& parent, bool ignoreDefaults, cons
 				parent.append_attribute(mddIter->key.c_str()).set_value(value.c_str());
 			else
 				parent.append_child(mddIter->key.c_str()).text().set(value.c_str());
+		}
+	}
+
+	if (!mTags.empty())
+	{
+		auto tagsNode = parent.append_child("tags");
+		for (auto tag : mTags)
+		{
+			tagsNode.append_child("tag").text().set(tag.c_str());;
 		}
 	}
 

@@ -9,6 +9,7 @@
 #include <vector>
 #include "utils/StringUtil.h"
 #include "Paths.h"
+#include "../es-app/src/MetaData.h"
 
 Settings* Settings::sInstance = NULL;
 static std::string mEmptyString = "";
@@ -430,6 +431,18 @@ bool Settings::saveFile()
 		node.append_attribute("name").set_value(iter->first.c_str());
 		node.append_attribute("value").set_value(iter->second.c_str());
 	}
+	for (auto tag : getKnownTags())
+	{
+		config.append_child("known-tag").append_attribute("name").set_value(tag.c_str());
+	}
+	for (auto tag : getIncludeTags())
+	{
+		config.append_child("include-tag").append_attribute("name").set_value(tag.c_str());
+	}
+	for (auto tag : getExcludeTags())
+	{
+		config.append_child("exclude-tag").append_attribute("name").set_value(tag.c_str());
+	}
 
 	doc.save_file(path.c_str());
 
@@ -467,6 +480,12 @@ void Settings::loadFile()
 		setFloat(node.attribute("name").as_string(), node.attribute("value").as_float());
 	for(pugi::xml_node node = root.child("string"); node; node = node.next_sibling("string"))
 		setString(node.attribute("name").as_string(), node.attribute("value").as_string());
+	for(pugi::xml_node node = root.child("known-tag"); node; node = node.next_sibling("known-tag"))
+		addKnownTag(node.attribute("name").as_string());
+	for(pugi::xml_node node = root.child("include-tag"); node; node = node.next_sibling("include-tag"))
+		addIncludeTag(node.attribute("name").as_string());
+	for(pugi::xml_node node = root.child("exclude-tag"); node; node = node.next_sibling("exclude-tag"))
+		addExcludeTag(node.attribute("name").as_string());
 
 	mWasChanged = false;
 }
@@ -522,4 +541,121 @@ bool Settings::setString(const std::string& name, const std::string& value)
 	}
 
 	return false;
+}
+
+void Settings::addKnownTag(const std::string& value)
+{
+	auto r = mKnownTags.insert(value);
+	if (r.second) mWasChanged = true;
+}
+
+void Settings::addKnownTags(const std::set<std::string>& value)
+{
+	for (auto tag : value)
+	{
+		auto r = mKnownTags.insert(tag);
+		if (r.second) mWasChanged = true;
+	}
+}
+
+void Settings::removeKnownTag(const std::string& value)
+{
+	if (mKnownTags.erase(value) > 0)
+	{
+		mWasChanged = true;
+	}
+}
+
+bool Settings::isKnownTag(const std::string& value)
+{
+	return mKnownTags.find(value) != mKnownTags.end();
+}
+
+const std::set<std::string>& Settings::getKnownTags()
+{
+	return mKnownTags;
+}
+
+std::string Settings::knownTagsToString()
+{
+	std::string s;
+
+	for (auto const& e : mKnownTags)
+	{
+			s += e;
+			s += ',';
+	}
+
+	if (!s.empty()) s.pop_back();
+	return s;
+}
+
+void Settings::addIncludeTag(const std::string& value)
+{
+	auto r = mIncludeTags.insert(value);
+	if (r.second) mWasChanged = true;
+}
+
+void Settings::removeIncludeTag(const std::string& value)
+{
+	if (mIncludeTags.erase(value) > 0)
+	{
+		mWasChanged = true;
+	}
+}
+
+const std::set<std::string>& Settings::getIncludeTags()
+{
+	return mIncludeTags;
+}
+
+void Settings::addExcludeTag(const std::string& value)
+{
+	auto r = mExcludeTags.insert(value);
+	if (r.second) mWasChanged = true;	
+}
+
+void Settings::removeExcludeTag(const std::string& value)
+{
+	if (mExcludeTags.erase(value) > 0)
+	{
+		mWasChanged = true;
+	}
+}
+
+const std::set<std::string>& Settings::getExcludeTags()
+{
+	return mExcludeTags;
+}
+
+bool Settings::canInclude(const std::set<std::string>& tags)
+{
+	bool ret = false;
+	if (!mIncludeTags.empty()) {
+		for (auto incTag : mIncludeTags)
+		{
+			if (tags.find(incTag) != tags.end()) {
+				// Any include tag will do (no need to match all)
+				ret = true;
+				break;
+			}
+		}
+	}
+	else
+	{
+		// Can include if no mIncludeTags
+		ret = true;
+	}
+	if (!mExcludeTags.empty()) {
+		for (auto excTag : mExcludeTags)
+		{
+			if (tags.find(excTag) != tags.end()) {
+				// Any exclude tag match will block
+				ret = false;
+				break;
+			}
+		}
+	}
+
+	return ret;
 }

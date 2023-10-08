@@ -1,5 +1,6 @@
 #include "FileData.h"
 
+#include "Settings.h"
 #include "utils/FileSystemUtil.h"
 #include "utils/StringUtil.h"
 #include "utils/TimeUtil.h"
@@ -212,6 +213,11 @@ const bool FileData::getFavorite()
 const bool FileData::getHidden()
 {
 	return getMetadata(MetaDataId::Hidden) == "true";
+}
+
+const bool FileData::getTagsOk()
+{
+	return Settings::getInstance()->canInclude(getMetadata().getTags());
 }
 
 const bool FileData::getKidGame()
@@ -989,6 +995,9 @@ const std::vector<FileData*> FolderData::getChildrenListToDisplay()
 				continue;
 		}
 
+		if (!(*it)->getTagsOk())
+			continue;
+
 		if (idx != nullptr)
 		{
 			int score = idx->showFile(*it);
@@ -1020,6 +1029,9 @@ const std::vector<FileData*> FolderData::getChildrenListToDisplay()
 					continue;
 
 				if (filterKidGame && !fd->getKidGame())
+					continue;
+
+				if (!fd->getTagsOk())
 					continue;
 
 				ret.push_back(fd);
@@ -1111,6 +1123,8 @@ FileData* FolderData::findUniqueGameForFolder()
 			if (!showHiddenFiles)
 				continue;
 		}
+		if (!game->getTagsOk())
+			continue;
 
 		found = game;
 		count++;
@@ -1169,6 +1183,9 @@ void FolderData::getFilesRecursiveWithContext(std::vector<FileData*>& out, unsig
 						if (filter->hiddenExtensions.find(extlow) != filter->hiddenExtensions.cend())
 							continue;
 					}
+
+					if (!it->getTagsOk())
+						continue;
 				}
 
 				if (includeVirtualStorage || !isVirtualFolder(it))

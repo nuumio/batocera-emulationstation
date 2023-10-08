@@ -99,6 +99,7 @@ public:
 	void setEmulator(const std::string value);
 
 	virtual const bool getHidden();
+	virtual const bool getTagsOk();
 	virtual const bool getFavorite();
 	virtual const bool getKidGame();
 	virtual const bool hasCheevos();

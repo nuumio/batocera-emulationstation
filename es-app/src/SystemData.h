@@ -214,6 +214,7 @@ public:
 private:
 	std::string getKeyboardMappingFilePath();
 	static void createGroupedSystems();
+	static void collectKnownTags();
 
 	size_t mGameListHash;
 

@@ -497,6 +497,21 @@ void SystemData::createGroupedSystems()
 	}
 }
 
+void SystemData::collectKnownTags()
+{
+	auto settings = Settings::getInstance();
+	for (auto sys : sSystemVector)
+	{
+		auto items = sys->getRootFolder()->getFilesRecursive(GAME | FOLDER);
+		for (auto data : items)
+		{
+			settings->addKnownTags(data->getMetadata().getTags());
+		}
+	}
+	LOG(LogDebug) << "SystemData::collectKnownTags: known tags after loading systems:" << settings->knownTagsToString();
+	settings->saveFile(); // will save only if tags were changed
+}
+
 bool SystemData::loadFeatures()
 {
 	if (mEmulators.size() == 0)
@@ -870,6 +885,7 @@ bool SystemData::loadConfig(Window* window)
 	if (SystemData::sSystemVector.size() > 0)
 	{
 		createGroupedSystems();
+		collectKnownTags();
 
 		// Load features before creating collections
 		//loadFeatures();

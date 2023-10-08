@@ -3423,7 +3423,7 @@ void GuiMenu::openQuitMenu_static(Window *window, bool quickAccessMenu, bool ani
 			_("NO"), nullptr));
 	}, "iconRestart");
 
-	if (ApiSystem::getInstance()->isScriptingSupported(ApiSystem::SUSPEND))
+	if (SystemConf::getInstance()->getBool("system.enablesuspend") && ApiSystem::getInstance()->isScriptingSupported(ApiSystem::SUSPEND))
 	{
 		s->addEntry(_("SUSPEND SYSTEM"), false, [window, s] {
 			window->pushGui(new GuiMsgBox(window, _("REALLY SUSPEND ?"),

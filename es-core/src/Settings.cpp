@@ -95,6 +95,8 @@ std::vector<const char*> settings_dont_save {
 Settings::Settings() : mLoaded(false)
 {
 	setDefaults();
+	mCurrentTagRuleSet = new TagRuleSet("default");
+	mTagRuleSets.insert(std::pair<std::string, TagRuleSet*>(mCurrentTagRuleSet->mName, mCurrentTagRuleSet));
 	loadFile();
 	mLoaded = true;
 }
@@ -431,17 +433,27 @@ bool Settings::saveFile()
 		node.append_attribute("name").set_value(iter->first.c_str());
 		node.append_attribute("value").set_value(iter->second.c_str());
 	}
-	for (auto tag : getKnownTags())
+	auto knownTags = getKnownTags();
+	if (!knownTags.empty())
 	{
-		config.append_child("known-tag").append_attribute("name").set_value(tag.c_str());
-	}
-	for (auto tag : getIncludeTags())
+		auto knownTagsNode = config.append_child("known-tags");
+		for (auto tag : knownTags)
+		{
+			knownTagsNode.append_child("known-tag").text().set(tag.c_str());
+		}
+	}	
+	for (auto entry : mTagRuleSets)
 	{
-		config.append_child("include-tag").append_attribute("name").set_value(tag.c_str());
-	}
-	for (auto tag : getExcludeTags())
-	{
-		config.append_child("exclude-tag").append_attribute("name").set_value(tag.c_str());
+		// Don't bother writing default rule set if it's at defaults (ie. empty)
+		auto tagRuleSet = entry.second;
+		if (tagRuleSet->mName == "default" && tagRuleSet->mExcludeTags.empty() && tagRuleSet->mIncludeTags.empty())
+			continue;
+		auto tagRuleSetNode = config.append_child("tag-rule-set");
+		tagRuleSetNode.append_child("name").text().set(tagRuleSet->mName.c_str());
+		for (auto tag : tagRuleSet->getIncludeTags())
+			tagRuleSetNode.append_child("include-tag").text().set(tag.c_str());
+		for (auto tag : tagRuleSet->getExcludeTags())
+			tagRuleSetNode.append_child("exclude-tag").text().set(tag.c_str());
 	}
 
 	doc.save_file(path.c_str());
@@ -480,12 +492,25 @@ void Settings::loadFile()
 		setFloat(node.attribute("name").as_string(), node.attribute("value").as_float());
 	for(pugi::xml_node node = root.child("string"); node; node = node.next_sibling("string"))
 		setString(node.attribute("name").as_string(), node.attribute("value").as_string());
-	for(pugi::xml_node node = root.child("known-tag"); node; node = node.next_sibling("known-tag"))
-		addKnownTag(node.attribute("name").as_string());
-	for(pugi::xml_node node = root.child("include-tag"); node; node = node.next_sibling("include-tag"))
-		addIncludeTag(node.attribute("name").as_string());
-	for(pugi::xml_node node = root.child("exclude-tag"); node; node = node.next_sibling("exclude-tag"))
-		addExcludeTag(node.attribute("name").as_string());
+
+	for(pugi::xml_node knownTagsNode = root.child("known-tags"); knownTagsNode; knownTagsNode = knownTagsNode.next_sibling("known-tags"))
+	{
+		for(pugi::xml_node node = knownTagsNode.child("known-tag"); node; node = node.next_sibling("known-tag"))
+			addKnownTag(node.text().as_string());
+	}
+	for(pugi::xml_node tagRuleSetNode = root.child("tag-rule-set"); tagRuleSetNode; tagRuleSetNode = tagRuleSetNode.next_sibling("tag-rule-set"))
+	{
+		pugi::xml_node nameNode = tagRuleSetNode.child("name");
+		// Just skip if name not found
+		if (nameNode.empty())
+			continue;
+		auto tagRuleSet = getOrCreateTagRuleSet(nameNode.text().as_string());
+
+		for(pugi::xml_node incNode = tagRuleSetNode.child("include-tag"); incNode; incNode = incNode.next_sibling("include-tag"))
+			tagRuleSet->addIncludeTag(incNode.text().as_string());
+		for(pugi::xml_node excNode = tagRuleSetNode.child("exclude-tag"); excNode; excNode = excNode.next_sibling("exclude-tag"))
+			tagRuleSet->addExcludeTag(excNode.text().as_string());
+	}
 
 	mWasChanged = false;
 }
@@ -592,43 +617,93 @@ std::string Settings::knownTagsToString()
 
 void Settings::addIncludeTag(const std::string& value)
 {
-	auto r = mIncludeTags.insert(value);
-	if (r.second) mWasChanged = true;
+	bool changed = mCurrentTagRuleSet->addIncludeTag(value);
+	if (changed)
+		mWasChanged = true;
 }
 
 void Settings::removeIncludeTag(const std::string& value)
 {
-	if (mIncludeTags.erase(value) > 0)
-	{
+	bool changed = mCurrentTagRuleSet->removeIncludeTag(value);
+	if (changed)
 		mWasChanged = true;
-	}
 }
 
 const std::set<std::string>& Settings::getIncludeTags()
 {
-	return mIncludeTags;
+	return mCurrentTagRuleSet->getIncludeTags();
 }
 
 void Settings::addExcludeTag(const std::string& value)
 {
-	auto r = mExcludeTags.insert(value);
-	if (r.second) mWasChanged = true;	
+	bool changed = mCurrentTagRuleSet->addExcludeTag(value);
+	if (changed)
+		mWasChanged = true;	
 }
 
 void Settings::removeExcludeTag(const std::string& value)
 {
-	if (mExcludeTags.erase(value) > 0)
-	{
+	bool changed = mCurrentTagRuleSet->removeExcludeTag(value);
+	if (changed)
 		mWasChanged = true;
-	}
 }
 
 const std::set<std::string>& Settings::getExcludeTags()
 {
-	return mExcludeTags;
+	return mCurrentTagRuleSet->getExcludeTags();
 }
 
 bool Settings::canInclude(const std::set<std::string>& tags)
+{
+	return mCurrentTagRuleSet->canInclude(tags);
+}
+
+TagRuleSet* Settings::getOrCreateTagRuleSet(const std::string& name)
+{
+	if (mTagRuleSets.count(name) > 0)
+		return mTagRuleSets[name];
+	auto r = new TagRuleSet(name);
+	mTagRuleSets.insert(std::pair<std::string, TagRuleSet*>(name, r));
+	return r;
+}
+
+TagRuleSet::TagRuleSet(std::string name) : mName(name)
+{
+}
+
+bool TagRuleSet::addIncludeTag(const std::string& value)
+{
+	auto r = mIncludeTags.insert(value);
+	return r.second;
+}
+
+bool TagRuleSet::removeIncludeTag(const std::string& value)
+{
+	return mIncludeTags.erase(value) > 0;
+}
+
+const std::set<std::string>& TagRuleSet::getIncludeTags()
+{
+	return mIncludeTags;
+}
+
+bool TagRuleSet::addExcludeTag(const std::string& value)
+{
+	auto r = mExcludeTags.insert(value);
+	return r.second;
+}
+
+bool TagRuleSet::removeExcludeTag(const std::string& value)
+{
+	return mExcludeTags.erase(value) > 0;
+}
+
+const std::set<std::string>& TagRuleSet::getExcludeTags()
+{
+	return mExcludeTags;
+}
+
+bool TagRuleSet::canInclude(const std::set<std::string>& tags)
 {
 	bool ret = false;
 	if (!mIncludeTags.empty()) {

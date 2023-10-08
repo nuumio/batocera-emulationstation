@@ -8,6 +8,32 @@
 #include <vector>
 #include "utils/Delegate.h"
 
+class TagRuleSet
+{
+public:
+	TagRuleSet(std::string name);
+	~TagRuleSet() {
+		mIncludeTags.clear();
+		mExcludeTags.clear();
+	};
+
+	bool addIncludeTag(const std::string& value);
+	bool removeIncludeTag(const std::string& value);
+	const std::set<std::string>& getIncludeTags();
+	bool addExcludeTag(const std::string& value);
+	bool removeExcludeTag(const std::string& value);
+	const std::set<std::string>& getExcludeTags();
+	bool canInclude(const std::set<std::string>& tags);
+
+private:
+	friend class Settings;
+	std::string mName;
+	// Include tags, include items with these tags (unless empty)
+	std::set<std::string> mIncludeTags;
+	// Exclude tags, exclude items with these tags
+	std::set<std::string> mExcludeTags;
+};
+
 // Non-cached settings macros
 #define DEFINE_BOOL_SETTING(XX) static bool XX() { return Settings::getInstance()->getBool(#XX); }; static bool set##XX(bool val) { return Settings::getInstance()->setBool(#XX, val); };
 #define DEFINE_INT_SETTING(XX) static int XX() { return Settings::getInstance()->getInt(#XX); }; static bool set##XX(int val) { return Settings::getInstance()->setInt(#XX, val); };
@@ -145,10 +171,10 @@ private:
 
 	// All known tags
 	std::set<std::string> mKnownTags;
-	// Include tags, include items with these tags (unless empty)
-	std::set<std::string> mIncludeTags;
-	// Exclude tags, exclude items with these tags
-	std::set<std::string> mExcludeTags;
+	std::map<std::string, TagRuleSet*> mTagRuleSets;
+	TagRuleSet* mCurrentTagRuleSet;
+
+	TagRuleSet* getOrCreateTagRuleSet(const std::string& name);
 };
 
 #endif // ES_CORE_SETTINGS_H

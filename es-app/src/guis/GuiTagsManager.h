@@ -28,6 +28,7 @@ private:
 	void initializeMenu();
 	void close();
 	void addCurrentTagSelectorToMenu();
+	void updateCurrentTagSelector();
 
 	MenuComponent mMenu;
 	SystemData* mSystem;

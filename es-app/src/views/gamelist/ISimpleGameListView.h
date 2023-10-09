@@ -53,6 +53,7 @@ public:
 	void showGamelistOptions();
 	void showSelectedGameSaveSnapshots();
 	void toggleFavoritesFilter();
+	void showTagsManager();
 
 	virtual std::vector<HelpPrompt> getHelpPrompts() override;
 	virtual bool onAction(const std::string& action) override;
@@ -87,6 +88,7 @@ protected:
 	MultiStateInput mXButton;
 	MultiStateInput mYButton;
 	MultiStateInput mSelectButton;
+	MultiStateInput mHotkeyButton;
 
 	ThemeData::ExtraImportType mExtraMode;	
 };

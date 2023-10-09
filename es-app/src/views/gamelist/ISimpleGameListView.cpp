@@ -26,10 +26,12 @@
 #include "views/Binding.h"
 #include "guis/GuiImageViewer.h"
 #include "guis/GuiGameAchievements.h"
+#include "guis/GuiTagsManager.h"
 
 ISimpleGameListView::ISimpleGameListView(Window* window, FolderData* root, bool temporary) : IGameListView(window, root),
 	mHeaderText(window), mHeaderImage(window), mBackground(window), mFolderPath(window), mOnExitPopup(nullptr),
-	mYButton("y"), mXButton("x"), mOKButton("OK"), mSelectButton("select")
+	mYButton("y"), mXButton("x"), mOKButton("OK"), mSelectButton("select"),
+	mHotkeyButton("hotkey")
 {
 	mExtraMode = ThemeData::ExtraImportType::ALL_EXTRAS;
 
@@ -206,6 +208,11 @@ void ISimpleGameListView::update(const int deltaTime)
 		else if (!UIModeController::getInstance()->isUIModeKid() && (mRoot->getSystem()->isGameSystem() || mRoot->getSystem()->isGroupSystem()))
 			CollectionSystemManager::get()->toggleGameInCollection(getCursor(), "Favorites");
 	}
+
+	if (mHotkeyButton.isLongPressed(deltaTime))
+	{
+		showTagsManager();
+	}
 }
 
 void ISimpleGameListView::goBack()
@@ -276,7 +283,36 @@ bool ISimpleGameListView::input(InputConfig* config, Input input)
 		return true;
 	}
 
-	if (config->isMappedTo(BUTTON_OK, input) || config->isMappedTo("x", input) || config->isMappedTo("y", input) || config->isMappedTo("select", input))
+	if (mHotkeyButton.isShortPressed(config, input))
+	{
+		auto currentTag = Settings::getInstance()->getCurrentTag();
+		if (currentTag.empty())
+		{
+			mWindow->displayNotificationMessage(_("NO CURRENT TAG"), 2000);
+		}
+		else
+		{
+			auto sel = getCursor();
+			auto hasTag = sel->getMetadata().hasTag(currentTag);
+			if (hasTag)
+			{
+				sel->getMetadata().removeTag(currentTag);
+				mWindow->displayNotificationMessage(_U("\uF00D ") +
+					Utils::String::format(_(
+						"%s REMOVED FROM %s").c_str(), currentTag.c_str(), sel->getDisplayName().c_str()), 4000);
+			}
+			else
+			{
+				sel->getMetadata().addTag(currentTag);
+				mWindow->displayNotificationMessage(_U("\uF02B ") +
+					Utils::String::format(_(
+						"%s ADDED TO %s").c_str(), currentTag.c_str(), sel->getDisplayName().c_str()), 4000);
+			}
+		}
+		return true;
+	}
+
+	if (config->isMappedTo(BUTTON_OK, input) || config->isMappedTo("x", input) || config->isMappedTo("y", input) || config->isMappedTo("select", input) || config->isMappedTo("hotkey", input))
 		return true;
 
 	if (input.value == 0)
@@ -315,6 +351,12 @@ bool ISimpleGameListView::input(InputConfig* config, Input input)
 	}
 
 	return IGameListView::input(config, input);
+}
+
+void ISimpleGameListView::showTagsManager()
+{
+	GuiTagsManager* gtm = new GuiTagsManager(mWindow, getCursor()->getSystem());
+	mWindow->pushGui(gtm);
 }
 
 void ISimpleGameListView::showGamelistOptions()

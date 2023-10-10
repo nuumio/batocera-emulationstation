@@ -1,5 +1,6 @@
 #include "guis/GuiMsgBox.h"
 
+#include "Log.h"
 #include "components/ButtonComponent.h"
 #include "components/MenuComponent.h"
 #include "components/ImageComponent.h"
@@ -9,20 +10,34 @@
 
 #define HORIZONTAL_PADDING_PX  (Renderer::getScreenWidth()*0.01)
 
-GuiMsgBox::GuiMsgBox(Window* window, const std::string& text, const std::string& name1, const std::function<void()>& func1, GuiMsgBoxIcon icon) 
-	: GuiMsgBox(window, text, name1, func1, "", nullptr, "", nullptr, icon) { }
+GuiMsgBox::GuiMsgBox(Window* window, const std::string& text,
+	const std::string& name1, const std::function<void()>& func1, GuiMsgBoxIcon icon,
+	const bool enabled1,
+	const int enableTimer1) 
+	: GuiMsgBox(window, text, name1, func1, "", nullptr, "", nullptr, icon, enabled1, true, enableTimer1, 0) { }
 
 GuiMsgBox::GuiMsgBox(Window* window, const std::string& text,
 	const std::string& name1, const std::function<void()>& func1,
 	const std::string& name2, const std::function<void()>& func2,
-	GuiMsgBoxIcon icon)
-	: GuiMsgBox(window, text, name1, func1, name2, func2, "", nullptr, icon) { }
+	GuiMsgBoxIcon icon,
+	const bool enabled1,
+	const bool enabled2,
+	const int enableTimer1,
+	const int enableTimer2)
+	: GuiMsgBox(window, text, name1, func1, name2, func2, "", nullptr, icon, enabled1, enabled2, true, enableTimer1, enableTimer2, 0) { }
 
-GuiMsgBox::GuiMsgBox(Window* window, const std::string& text, 
+GuiMsgBox::GuiMsgBox(Window* window, const std::string& text,
 	const std::string& name1, const std::function<void()>& func1,
-	const std::string& name2, const std::function<void()>& func2, 
+	const std::string& name2, const std::function<void()>& func2,
 	const std::string& name3, const std::function<void()>& func3,
-	GuiMsgBoxIcon icon) : GuiComponent(window),
+	GuiMsgBoxIcon icon,
+	const bool enabled1,
+	const bool enabled2,
+	const bool enabled3,
+	const int enableTimer1,
+	const int enableTimer2,
+	const int enableTimer3
+	) : GuiComponent(window),
 	mBackground(window, ":/frame.png"), mGrid(window, Vector2i(2, 2))
 	
 {
@@ -152,14 +167,21 @@ GuiMsgBox::GuiMsgBox(Window* window, const std::string& text,
 
 	TextToSpeech::getInstance()->say(text);
 
+	int i =0;
 	for (auto btn : mButtons)
 	{
 		if (btn->hasFocus())
 		{
 			TextToSpeech::getInstance()->say(btn->getText(), true);
-			break;
 		}
 	}
+	if (!enabled1) mButtons[0]->setEnabled(false);
+	if (!enabled2 && mButtons.size() > 1) mButtons[1]->setEnabled(false);
+	if (!enabled3 && mButtons.size() > 2) mButtons[2]->setEnabled(false);
+	mTimer = 0;
+	mAutoEnableTimes.push_back(enableTimer1);
+	mAutoEnableTimes.push_back(enableTimer2);
+	mAutoEnableTimes.push_back(enableTimer3);
 }
 
 bool GuiMsgBox::input(InputConfig* config, Input input)
@@ -215,4 +237,18 @@ void GuiMsgBox::deleteMeAndCall(const std::function<void()>& func)
 std::vector<HelpPrompt> GuiMsgBox::getHelpPrompts()
 {
 	return mGrid.getHelpPrompts();
+}
+
+void GuiMsgBox::update(int deltaTime)
+{
+	GuiComponent::update(deltaTime);
+	mTimer += deltaTime;
+	for (int i = 0; i < mButtons.size(); i++)
+	{
+		auto btn = mButtons[i];
+		
+		if (!btn->getEnabled() && i < mAutoEnableTimes.size() && mTimer >= mAutoEnableTimes[i]) {
+			btn->setEnabled(true);
+		}
+	}
 }

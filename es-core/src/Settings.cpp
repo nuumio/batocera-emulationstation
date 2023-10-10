@@ -674,6 +674,45 @@ bool Settings::canInclude(const std::set<std::string>& tags)
 	return mCurrentTagRuleSet->canInclude(tags);
 }
 
+bool Settings::deleteTag(const std::string& value)
+{
+	bool changed = false;
+
+	for (auto tagRuleSet : mTagRuleSets)
+	{
+		if (tagRuleSet.second->deleteTag(value))
+			changed = true;
+	}
+
+	if (value == mCurrentTag)
+	{
+		mCurrentTag = "";
+		auto x = mKnownTags.find(value);
+		if (x != mKnownTags.end()) {
+			// Set current tag to next one if possible.
+			// Else Set current tag to one before it if possible.
+			++x;
+			if (x != mKnownTags.end()) {
+				mCurrentTag = *x;
+			} else if (mKnownTags.size() > 1) {
+				// We're it the end, have at least 2 elements and we're removing the last one:
+				// decrement twice and we have the element just before the one deleted.
+				--x;
+				--x;
+				mCurrentTag = *x;
+			}
+		}
+	}
+
+	if(mKnownTags.erase(value) > 0)
+		changed = true;
+
+	if (changed)
+		mWasChanged = true;
+
+	return changed;
+}
+
 TagRuleSet* Settings::getOrCreateTagRuleSet(const std::string& name)
 {
 	if (mTagRuleSets.count(name) > 0)
@@ -749,4 +788,11 @@ bool TagRuleSet::canInclude(const std::set<std::string>& tags)
 	}
 
 	return ret;
+}
+
+bool TagRuleSet::deleteTag(const std::string& value)
+{
+	bool excErased = mExcludeTags.erase(value);
+	bool incErased = mIncludeTags.erase(value);
+	return excErased || incErased;
 }

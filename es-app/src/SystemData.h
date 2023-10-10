@@ -102,6 +102,7 @@ public:
 
 	static VectorEx<SystemData*> sSystemVector;
 
+	inline static void forEachSystem(const std::function<void(SystemData*)>& func) { for (auto it = sSystemVector.begin() ; it != sSystemVector.end(); ++it) func(*it); };
 	inline std::vector<SystemData*>::const_iterator getIterator() const { return std::find(sSystemVector.cbegin(), sSystemVector.cend(), this); };
 	inline std::vector<SystemData*>::const_reverse_iterator getRevIterator() const { return std::find(sSystemVector.crbegin(), sSystemVector.crend(), this); };
 	inline bool isCollection() { return mIsCollectionSystem; };

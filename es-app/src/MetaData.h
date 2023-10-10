@@ -175,8 +175,8 @@ public:
 	void setScrapeDate(const std::string& scraper);
 	Utils::Time::DateTime* getScrapeDate(const std::string& scraper);
 
-	void addTag(const std::string& value) { mTags.insert(value); setDirty(); };
-	void removeTag(const std::string& value) { mTags.erase(value); setDirty(); };
+	void addTag(const std::string& value) { auto r = mTags.insert(value); if (r.second) setDirty(); };
+	void removeTag(const std::string& value) { if(mTags.erase(value) > 0) setDirty(); };
 	bool hasTag(const std::string& value) { return mTags.find(value) != mTags.end(); };
 	const std::set<std::string>& getTags() { return mTags; };
 

@@ -25,6 +25,8 @@ public:
 	const std::set<std::string>& getExcludeTags();
 	bool canInclude(const std::set<std::string>& tags);
 
+	bool deleteTag(const std::string& value);
+
 private:
 	friend class Settings;
 	std::string mName;
@@ -108,6 +110,8 @@ public:
 	void removeExcludeTag(const std::string& value);
 	const std::set<std::string>& getExcludeTags();
 	bool canInclude(const std::set<std::string>& tags);
+
+	bool deleteTag(const std::string& value);
 
 	// Cached settings using static fields. They must be implemented using IMPLEMENT_STATIC_xx_SETTING & updated with UPDATE_STATIC_xxx_SETTING
 	DECLARE_STATIC_BOOL_SETTING(DebugText)

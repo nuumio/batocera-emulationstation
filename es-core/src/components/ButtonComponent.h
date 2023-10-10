@@ -15,6 +15,7 @@ public:
 	void setPressedFunc(std::function<void()> f);
 
 	void setEnabled(bool enable);
+	bool getEnabled();
 
 	bool input(InputConfig* config, Input input) override;
 	void render(const Transform4x4f& parentTrans) override;

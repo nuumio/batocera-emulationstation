@@ -100,6 +100,11 @@ void ButtonComponent::setEnabled(bool enabled)
 	updateImage();
 }
 
+bool ButtonComponent::getEnabled()
+{
+	return mEnabled;
+}
+
 void ButtonComponent::updateImage()
 {
 	if (!mEnabled || !mPressedFunc)

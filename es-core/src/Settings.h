@@ -102,6 +102,8 @@ public:
 
 	const std::string getCurrentTag();
 	bool setCurrentTag(std::string& value);
+	const std::tuple<bool, std::string> setPrevTagAsCurrent();
+	const std::tuple<bool, std::string> setNextTagAsCurrent();
 
 	void addIncludeTag(const std::string& value);
 	void removeIncludeTag(const std::string& value);
@@ -181,6 +183,8 @@ private:
 	std::map<std::string, TagRuleSet*> mTagRuleSets;
 	TagRuleSet* mCurrentTagRuleSet;
 	std::string mCurrentTag;
+
+	const std::tuple<bool, std::string> setAsCurrentTag(bool next);
 
 	TagRuleSet* getOrCreateTagRuleSet(const std::string& name);
 };

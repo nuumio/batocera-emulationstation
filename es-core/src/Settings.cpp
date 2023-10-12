@@ -626,9 +626,76 @@ const std::string Settings::getCurrentTag()
 
 bool Settings::setCurrentTag(std::string& value)
 {
-	mWasChanged = value != mCurrentTag;
+	// Reject invalid tags
+	if (!value.empty() && !isKnownTag(value))
+		return false;
+
+	bool changed = value != mCurrentTag;
 	mCurrentTag = value;
-	return mWasChanged;
+	if (changed)
+		mWasChanged = true;
+	return changed;
+}
+
+const std::tuple<bool, std::string> Settings::setPrevTagAsCurrent()
+{
+	return setAsCurrentTag(false);
+}
+
+const std::tuple<bool, std::string> Settings::setNextTagAsCurrent()
+{
+	return setAsCurrentTag(true);
+}
+
+const std::tuple<bool, std::string> Settings::setAsCurrentTag(bool next)
+{
+	// Can't change if we have no tags (otherwise we have <no tag> + tag(s))
+	// This prevents iterators overflowing.
+	if (mKnownTags.size() == 0)
+		return {false, mCurrentTag};
+
+	std::set<std::string>::iterator it;
+	bool gotEmpty = false;
+	if (mCurrentTag.empty())
+	{
+		// Cases when <no tag> is selected
+		if (next)
+		{
+			// this is already the first tag!
+			it = mKnownTags.begin();
+		}
+		else
+		{
+			// Jump to last one from <no tag>
+			it = mKnownTags.end();
+			--it;
+		}
+	} else {
+		// Cases when real tag is selected
+		it = mKnownTags.find(mCurrentTag);
+		if (next)
+		{
+			if (it != mKnownTags.end())
+				++it;
+			else
+				gotEmpty = true;
+		}
+		else
+		{
+			if (it != mKnownTags.begin())
+				--it;
+			else
+				gotEmpty = true;
+		}
+	}
+	std::string newTag = gotEmpty || it == mKnownTags.end() ? "" : *it;
+	bool changed = newTag != mCurrentTag;
+	if (changed)
+	{
+		mCurrentTag = newTag;
+		mWasChanged = true;
+	}
+	return {changed, mCurrentTag};
 }
 
 void Settings::addIncludeTag(const std::string& value)

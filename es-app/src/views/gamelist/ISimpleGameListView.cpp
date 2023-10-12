@@ -31,7 +31,10 @@
 ISimpleGameListView::ISimpleGameListView(Window* window, FolderData* root, bool temporary) : IGameListView(window, root),
 	mHeaderText(window), mHeaderImage(window), mBackground(window), mFolderPath(window), mOnExitPopup(nullptr),
 	mYButton("y"), mXButton("x"), mOKButton("OK"), mSelectButton("select"),
-	mHotkeyButton("hotkey")
+	mHotkeyButton("hotkey"),
+	mDirLeft("left"),
+	mDirRight("right"),
+	mUnsavedSettings(false)
 {
 	mExtraMode = ThemeData::ExtraImportType::ALL_EXTRAS;
 
@@ -208,11 +211,6 @@ void ISimpleGameListView::update(const int deltaTime)
 		else if (!UIModeController::getInstance()->isUIModeKid() && (mRoot->getSystem()->isGameSystem() || mRoot->getSystem()->isGroupSystem()))
 			CollectionSystemManager::get()->toggleGameInCollection(getCursor(), "Favorites");
 	}
-
-	if (mHotkeyButton.isLongPressed(deltaTime))
-	{
-		showTagsManager();
-	}
 }
 
 void ISimpleGameListView::goBack()
@@ -255,6 +253,35 @@ void ISimpleGameListView::goBack()
 
 bool ISimpleGameListView::input(InputConfig* config, Input input)
 {
+	if (mHotkeyButton.isDown(config, input))
+	{
+		if (mSelectButton.isShortPressed(config, input))
+		{
+			showTagsManager();
+			return true;
+		}
+		if (mDirLeft.isShortPressed(config, input))
+		{
+			mHotkeyButton.releasePressed(); // prevent "insta-tag" after releasing hotkey
+			changeCurrentTag(false);
+			return true;
+		}
+		if (mDirRight.isShortPressed(config, input))
+		{
+			mHotkeyButton.releasePressed(); // prevent "insta-tag" after releasing hotkey
+			changeCurrentTag(true);
+			return true;
+		}
+		if (mDirLeft.isDown(config, input) || mDirRight.isDown(config, input))
+		{
+			// Prevent system change;
+			return true;
+		}
+	}
+	else
+	{
+		releaseDownInputs();
+	}
 	if (mOKButton.isShortPressed(config, input))
 	{
 		launchSelectedGame();
@@ -351,6 +378,50 @@ bool ISimpleGameListView::input(InputConfig* config, Input input)
 	}
 
 	return IGameListView::input(config, input);
+}
+
+void ISimpleGameListView::changeCurrentTag(bool next)
+{
+	bool changed;
+	std::string currentTag;
+	auto settings = Settings::getInstance();
+	std::tie(changed, currentTag) = next ? settings->setNextTagAsCurrent() : settings->setPrevTagAsCurrent();
+	if (!changed)
+		return;
+
+	mUnsavedSettings = true;
+
+	if (currentTag == "")
+		currentTag = "<no tag>";
+
+	mWindow->displayNotificationMessage(
+		Utils::String::format(_(
+			"CURRENT TAG IS %s").c_str(), currentTag.c_str()), 2000);
+}
+
+void ISimpleGameListView::onHide() {
+	// Called on app exit too (at least when closing window in windowed mode)
+	saveSettings();
+}
+
+void ISimpleGameListView::topWindow(bool isTop)
+{
+	releaseDownInputs();
+	saveSettings();
+}
+
+void ISimpleGameListView::saveSettings()
+{
+	if (mUnsavedSettings)
+		Settings::getInstance()->saveFile();
+	mUnsavedSettings = false;
+}
+
+void ISimpleGameListView::releaseDownInputs()
+{
+	mHotkeyButton.releaseDown();
+	mDirLeft.releaseDown();
+	mDirRight.releaseDown();
 }
 
 void ISimpleGameListView::showTagsManager()

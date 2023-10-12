@@ -33,7 +33,10 @@ public:
 	virtual void update(int deltaTime) override;
 	virtual bool input(InputConfig* config, Input input) override;
 	virtual void launch(FileData* game) = 0;
-	
+
+	virtual void onHide() override;
+	virtual void topWindow(bool isTop) override;
+
 	virtual std::vector<std::string> getEntriesLetters() override;
 	virtual std::vector<FileData*> getFileDataEntries() = 0;
 
@@ -89,8 +92,16 @@ protected:
 	MultiStateInput mYButton;
 	MultiStateInput mSelectButton;
 	MultiStateInput mHotkeyButton;
+	MultiStateInput mDirLeft;
+	MultiStateInput mDirRight;
 
-	ThemeData::ExtraImportType mExtraMode;	
+	ThemeData::ExtraImportType mExtraMode;
+
+private:
+	void changeCurrentTag(bool next);
+	void releaseDownInputs();
+	void saveSettings();
+	bool mUnsavedSettings;
 };
 
 #endif // ES_APP_VIEWS_GAME_LIST_ISIMPLE_GAME_LIST_VIEW_H

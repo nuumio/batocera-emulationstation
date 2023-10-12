@@ -8,6 +8,7 @@ MultiStateInput::MultiStateInput(const std::string& buttonName)
 	mButtonName = buttonName;
 	mTimeHoldingButton = 0;
 	mIsPressed = false;
+	mIsDown = false;
 }
 
 bool MultiStateInput::isShortPressed(InputConfig* config, Input input)
@@ -50,4 +51,13 @@ bool MultiStateInput::isLongPressed(int deltaTime)
 	}
 
 	return false;
+}
+
+bool MultiStateInput::isDown(InputConfig* config, Input input)
+{
+	if (config->isMappedTo(mButtonName, input))
+	{
+		mIsDown = input.value != 0;
+	}
+	return mIsDown;
 }

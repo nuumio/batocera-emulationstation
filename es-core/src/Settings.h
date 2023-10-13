@@ -17,6 +17,8 @@ public:
 		mExcludeTags.clear();
 	};
 
+	const std::string getName();
+
 	bool addIncludeTag(const std::string& value);
 	bool removeIncludeTag(const std::string& value);
 	const std::set<std::string>& getIncludeTags();
@@ -99,21 +101,27 @@ public:
 	bool isKnownTag(const std::string& value);
 	const std::set<std::string>& getKnownTags();
 	std::string knownTagsToString();
+	bool deleteTag(const std::string& value);
 
 	const std::string getCurrentTag();
 	bool setCurrentTag(std::string& value);
 	const std::tuple<bool, std::string> setPrevTagAsCurrent();
 	const std::tuple<bool, std::string> setNextTagAsCurrent();
 
-	void addIncludeTag(const std::string& value);
-	void removeIncludeTag(const std::string& value);
-	const std::set<std::string>& getIncludeTags();
-	void addExcludeTag(const std::string& value);
-	void removeExcludeTag(const std::string& value);
-	const std::set<std::string>& getExcludeTags();
-	bool canInclude(const std::set<std::string>& tags);
+	void addIncludeTag(const std::string& value, std::string ruleSet = "default");
+	void removeIncludeTag(const std::string& value, std::string ruleSet = "default");
+	const std::set<std::string>& getIncludeTags(std::string ruleSet = "default");
+	void addExcludeTag(const std::string& value, std::string ruleSet = "default");
+	void removeExcludeTag(const std::string& value, std::string ruleSet = "default");
+	const std::set<std::string>& getExcludeTags(std::string ruleSet = "default");
+	bool canInclude(const std::set<std::string>& tags, std::string ruleSet = "default");
 
-	bool deleteTag(const std::string& value);
+	TagRuleSet* getCurrentRuleSet();
+	const std::vector<std::string> getRuleSetNames();
+	const std::tuple<bool, std::string> setPrevRuleSetAsCurrent();
+	const std::tuple<bool, std::string> setNextTuleSetAsCurrent();
+	TagRuleSet* addRuleSet();
+	TagRuleSet* deleteRuleSet();
 
 	// Cached settings using static fields. They must be implemented using IMPLEMENT_STATIC_xx_SETTING & updated with UPDATE_STATIC_xxx_SETTING
 	DECLARE_STATIC_BOOL_SETTING(DebugText)
@@ -183,6 +191,7 @@ private:
 	std::map<std::string, TagRuleSet*> mTagRuleSets;
 	TagRuleSet* mCurrentTagRuleSet;
 	std::string mCurrentTag;
+	std::set<std::string> mEmptyStringSet;
 
 	const std::tuple<bool, std::string> setAsCurrentTag(bool next);
 

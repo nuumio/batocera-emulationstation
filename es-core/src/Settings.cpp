@@ -92,7 +92,7 @@ std::vector<const char*> settings_dont_save {
 	{ "MonitorID" },
 };
 
-Settings::Settings() : mLoaded(false)
+Settings::Settings() : mLoaded(false), mEmptyStringSet()
 {
 	setDefaults();
 	mCurrentTagRuleSet = new TagRuleSet("default");
@@ -698,47 +698,71 @@ const std::tuple<bool, std::string> Settings::setAsCurrentTag(bool next)
 	return {changed, mCurrentTag};
 }
 
-void Settings::addIncludeTag(const std::string& value)
+void Settings::addIncludeTag(const std::string& value, std::string ruleSet)
 {
-	bool changed = mCurrentTagRuleSet->addIncludeTag(value);
+	auto rs = mTagRuleSets.find(ruleSet);
+	if (rs == mTagRuleSets.end())
+		return;
+	bool changed = (*rs).second->addIncludeTag(value);
 	if (changed)
 		mWasChanged = true;
 }
 
-void Settings::removeIncludeTag(const std::string& value)
+void Settings::removeIncludeTag(const std::string& value, std::string ruleSet)
 {
-	bool changed = mCurrentTagRuleSet->removeIncludeTag(value);
+	auto rs = mTagRuleSets.find(ruleSet);
+	if (rs == mTagRuleSets.end())
+		return;
+	bool changed = (*rs).second->removeIncludeTag(value);
 	if (changed)
 		mWasChanged = true;
 }
 
-const std::set<std::string>& Settings::getIncludeTags()
+const std::set<std::string>& Settings::getIncludeTags(std::string ruleSet)
 {
-	return mCurrentTagRuleSet->getIncludeTags();
+	auto rs = mTagRuleSets.find(ruleSet);
+	if (rs == mTagRuleSets.end())
+		return mEmptyStringSet;
+
+	return (*rs).second->getIncludeTags();
 }
 
-void Settings::addExcludeTag(const std::string& value)
+void Settings::addExcludeTag(const std::string& value, std::string ruleSet)
 {
-	bool changed = mCurrentTagRuleSet->addExcludeTag(value);
+	auto rs = mTagRuleSets.find(ruleSet);
+	if (rs == mTagRuleSets.end())
+		return;
+	bool changed = (*rs).second->addExcludeTag(value);
 	if (changed)
 		mWasChanged = true;	
 }
 
-void Settings::removeExcludeTag(const std::string& value)
+void Settings::removeExcludeTag(const std::string& value, std::string ruleSet)
 {
-	bool changed = mCurrentTagRuleSet->removeExcludeTag(value);
+	auto rs = mTagRuleSets.find(ruleSet);
+	if (rs == mTagRuleSets.end())
+		return;
+	bool changed = (*rs).second->removeExcludeTag(value);
 	if (changed)
 		mWasChanged = true;
 }
 
-const std::set<std::string>& Settings::getExcludeTags()
+const std::set<std::string>& Settings::getExcludeTags(std::string ruleSet)
 {
-	return mCurrentTagRuleSet->getExcludeTags();
+	auto rs = mTagRuleSets.find(ruleSet);
+	if (rs == mTagRuleSets.end())
+		return mEmptyStringSet;
+
+	return (*rs).second->getExcludeTags();
 }
 
-bool Settings::canInclude(const std::set<std::string>& tags)
+bool Settings::canInclude(const std::set<std::string>& tags, std::string ruleSet)
 {
-	return mCurrentTagRuleSet->canInclude(tags);
+	auto rs = mTagRuleSets.find(ruleSet);
+	if (rs == mTagRuleSets.end())
+		return false;
+
+	return (*rs).second->canInclude(tags);
 }
 
 bool Settings::deleteTag(const std::string& value)
@@ -789,8 +813,48 @@ TagRuleSet* Settings::getOrCreateTagRuleSet(const std::string& name)
 	return r;
 }
 
+TagRuleSet* Settings::getCurrentRuleSet()
+{
+	return mCurrentTagRuleSet;
+}
+
+const std::vector<std::string> Settings::getRuleSetNames()
+{
+	std::vector<std::string> v;
+	for (auto entry : mTagRuleSets)
+	{
+		v.push_back(entry.first);
+	}
+	return v;
+}
+
+const std::tuple<bool, std::string> Settings::setPrevRuleSetAsCurrent()
+{
+	return {false, nullptr};
+}
+
+const std::tuple<bool, std::string> Settings::setNextTuleSetAsCurrent()
+{
+	return {false, nullptr};
+}
+
+TagRuleSet* Settings::addRuleSet()
+{
+	return nullptr;
+}
+
+TagRuleSet* Settings::deleteRuleSet()
+{
+	return nullptr;
+}
+
 TagRuleSet::TagRuleSet(std::string name) : mName(name)
 {
+}
+
+const std::string TagRuleSet::getName()
+{
+	return mName;
 }
 
 bool TagRuleSet::addIncludeTag(const std::string& value)

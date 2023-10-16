@@ -457,6 +457,8 @@ bool Settings::saveFile()
 		if (mTagRuleSets.size() == 1 && tagRuleSet->mName == TagRuleSet::defaultRuleSetName && tagRuleSet->empty())
 			continue;
 		auto tagRuleSetNode = config.append_child("tag-rule-set");
+		if (tagRuleSet->mName == TagRuleSet::defaultRuleSetName)
+			tagRuleSetNode.append_child(pugi::node_comment).set_value("The <default> rule set always exists");
 		tagRuleSetNode.append_child("name").text().set(tagRuleSet->mName.c_str());
 		for (auto tag : tagRuleSet->getIncludeTags())
 			tagRuleSetNode.append_child("include-tag").text().set(tag.c_str());

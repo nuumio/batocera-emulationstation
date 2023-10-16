@@ -59,6 +59,7 @@
 #include "Gamelist.h"
 #include "TextToSpeech.h"
 #include "Paths.h"
+#include "guis/GuiTagsManager.h"
 
 #if WIN32
 #include "Win32ApiSystem.h"
@@ -3355,6 +3356,14 @@ void GuiMenu::openQuitMenu_static(Window *window, bool quickAccessMenu, bool ani
 	if (quickAccessMenu)
 	{
 		s->addGroup(_("QUICK ACCESS"));
+
+		s->addEntry(_("TAGS MANAGER"), true, [s, window]()
+		{
+			GuiTagsManager* gtm = new GuiTagsManager(window);
+			window->pushGui(gtm);
+			delete s;
+		});
+
 
 		// Don't like one of the songs? Press next
 		if (AudioManager::getInstance()->isSongPlaying())

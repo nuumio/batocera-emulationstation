@@ -125,6 +125,9 @@ private:
 	void	 renderCarousel(const Transform4x4f& parentTrans);
 	void	 renderExtras(const Transform4x4f& parentTrans, float lower, float upper);
 	void	 renderInfoBar(const Transform4x4f& trans);
+
+	void releaseDownInputs();
+	void showTagsManager();
 	
 	SystemViewCarousel					mCarousel;
 	TextComponent						mSystemInfo;
@@ -142,6 +145,8 @@ private:
 	bool			mScreensaverActive;
 
 	MultiStateInput mYButton;
+	MultiStateInput mSelectButton;
+	MultiStateInput mHotkeyButton;
 
 	int				mLastCursor;
 

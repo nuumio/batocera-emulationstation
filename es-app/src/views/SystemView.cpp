@@ -26,6 +26,7 @@
 #include "TextToSpeech.h"
 #include "Binding.h"
 #include "guis/GuiRetroAchievements.h"
+#include "guis/GuiTagsManager.h"
 
 // buffer values for scrolling velocity (left, stopped, right)
 const int logoBuffersLeft[] = { -5, -2, -1 };
@@ -33,7 +34,9 @@ const int logoBuffersRight[] = { 1, 2, 5 };
 
 SystemView::SystemView(Window* window) : IList<SystemViewData, SystemData*>(window, LIST_SCROLL_STYLE_SLOW, LIST_ALWAYS_LOOP),
 										 mViewNeedsReload(true),
-										 mSystemInfo(window, _("SYSTEM INFO"), Font::get(FONT_SIZE_SMALL), 0x33333300, ALIGN_CENTER), mYButton("y")
+										 mSystemInfo(window, _("SYSTEM INFO"), Font::get(FONT_SIZE_SMALL), 0x33333300, ALIGN_CENTER), mYButton("y"),
+										 mHotkeyButton("hotkey"),
+										 mSelectButton("select")
 {
 	mCamOffset = 0;
 	mExtrasCamOffset = 0;
@@ -419,9 +422,27 @@ void SystemView::showNetplay()
 
 bool SystemView::input(InputConfig* config, Input input)
 {
+	if (mHotkeyButton.isDown(config, input))
+	{
+		if (mSelectButton.isShortPressed(config, input))
+		{
+			showTagsManager();
+			return true;
+		}
+	}
+	else
+	{
+		releaseDownInputs();
+	}
 	if (mYButton.isShortPressed(config, input))
 	{
 		showQuickSearch();
+		return true;
+	}
+
+	if(mSelectButton.isShortPressed(config, input))
+	{
+		GuiMenu::openQuitMenu_static(mWindow, true);        
 		return true;
 	}
 
@@ -534,13 +555,6 @@ bool SystemView::input(InputConfig* config, Input input)
 			setCursor(SystemData::getRandomSystem());
 			return true;
 		}
-				
-		if(config->isMappedTo("select", input))
-		{
-			GuiMenu::openQuitMenu_static(mWindow, true);        
-			return true;
-		}
-
 	}else{
 		if(config->isMappedLike("left", input) ||
 			config->isMappedLike("right", input) ||
@@ -563,6 +577,17 @@ bool SystemView::input(InputConfig* config, Input input)
 	}
 
 	return GuiComponent::input(config, input);
+}
+
+void SystemView::releaseDownInputs()
+{
+	mHotkeyButton.releaseDown();
+}
+
+void SystemView::showTagsManager()
+{
+	GuiTagsManager* gtm = new GuiTagsManager(mWindow);
+	mWindow->pushGui(gtm);
 }
 
 bool SystemView::showNavigationBar()
@@ -1735,6 +1760,7 @@ void SystemView::onScreenSaverDeactivate()
 
 void SystemView::topWindow(bool isTop)
 {
+	releaseDownInputs();
 	mDisable = !isTop;
 	updateExtras([this, isTop](GuiComponent* p) { p->topWindow(isTop); });
 

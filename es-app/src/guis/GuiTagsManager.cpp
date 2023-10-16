@@ -12,8 +12,8 @@
 
 GuiTagsManager::GuiTagsManager(Window* window, SystemData* system) : GuiComponent(window), mMenu(window, _("TAGS MANAGER")), mSystem(system)
 {
-	mCurrentTagSelect = std::make_shared<OptionListComponent<std::string>>(mWindow, _("CURRENT TAG"), false);
-	mCurrentRuleSetSelect = std::make_shared<OptionListComponent<std::string>>(mWindow, _("CURRENT RULE SET"), false);
+	mCurrentTagSelect = std::make_shared<OptionListComponent<std::string>>(mWindow, _("CURRENT TAG"), false, false, false);
+	mCurrentRuleSetSelect = std::make_shared<OptionListComponent<std::string>>(mWindow, _("CURRENT RULE SET"), false, false, false);
 	initializeMenu();
 }
 
@@ -158,9 +158,9 @@ void GuiTagsManager::addDeleteTagToMenu()
 		auto settings = Settings::getInstance();
 		if (tagToDelete.empty())
 			return;
-		mWindow->pushGui(new GuiMsgBox(mWindow, Utils::String::format(_("REALLY DELETE CURRENT TAG?\nCurrent tag is: %s\nIt will be removed from everywhere.").c_str(), tagToDelete.c_str()), _("YES"), [this, tagToDelete, deleteCurrentTag]
+		mWindow->pushGui(new GuiMsgBox(mWindow, Utils::String::format(_("REALLY DELETE CURRENT TAG?\nCURRENT TAG IS: %s\nIT WILL BE REMOVED FROM EVERYWHERE.").c_str(), tagToDelete.c_str()), _("YES"), [this, tagToDelete, deleteCurrentTag]
 		{
-			mWindow->pushGui(new GuiMsgBox(mWindow, Utils::String::format(_("REALLY REALLY DELETE CURRENT TAG?\nCurrent tag is: %s\nIt will be removed from known tags,\ngamelists and tag rule sets.\nThis action cannot be undone!").c_str(), tagToDelete.c_str()), _("YES"), [this, deleteCurrentTag]
+			mWindow->pushGui(new GuiMsgBox(mWindow, Utils::String::format(_("REALLY REALLY DELETE CURRENT TAG?\nCURRENT TAG IS: %s\nIT WILL BE REMOVED FROM KNOWN TAGS,\nGAMELISTS ANS TAG RULE SETS.\nTHIS ACTION CANNOT BE UNDONE!").c_str(), tagToDelete.c_str()), _("YES"), [this, deleteCurrentTag]
 			{
 				deleteCurrentTag();
 			}, 
@@ -291,9 +291,9 @@ void GuiTagsManager::addDeleteRuleSetToMenu()
 		if (ruleSetToDelete.empty())
 			return;
 		auto settings = Settings::getInstance();
-		mWindow->pushGui(new GuiMsgBox(mWindow, Utils::String::format(_("REALLY DELETE CURRENT RULE SET?\nCurrent rule set is: %s").c_str(), ruleSetToDelete.c_str()), _("YES"), [this, ruleSetToDelete, deleteCurrentRuleSet]
+		mWindow->pushGui(new GuiMsgBox(mWindow, Utils::String::format(_("REALLY DELETE CURRENT RULE SET?\nCURRENT RULE SET IS: %s").c_str(), ruleSetToDelete.c_str()), _("YES"), [this, ruleSetToDelete, deleteCurrentRuleSet]
 		{
-			mWindow->pushGui(new GuiMsgBox(mWindow, Utils::String::format(_("REALLY REALLY DELETE CURRENT RULE SET?\nCurrent rule set is: %s\nThis action cannot be undone!").c_str(), ruleSetToDelete.c_str()), _("YES"), [this, deleteCurrentRuleSet]
+			mWindow->pushGui(new GuiMsgBox(mWindow, Utils::String::format(_("REALLY REALLY DELETE CURRENT RULE SET?\nCURRENT RULE SET IS: %s\nTHIS ACTION CANNOT BE UNDONE!").c_str(), ruleSetToDelete.c_str()), _("YES"), [this, deleteCurrentRuleSet]
 			{
 				deleteCurrentRuleSet();
 			}, 

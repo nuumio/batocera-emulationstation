@@ -6,6 +6,7 @@
 #include "utils/Platform.h"
 #include <pugixml/src/pugixml.hpp>
 #include <algorithm>
+#include <string>
 #include <vector>
 #include "utils/StringUtil.h"
 #include "Paths.h"
@@ -14,6 +15,9 @@
 Settings* Settings::sInstance = NULL;
 static std::string mEmptyString = "";
 Delegate<ISettingsChangedEvent> Settings::settingChanged;
+
+const std::string TagRuleSet::defaultRuleSetName = "<default>";
+const std::string TagRuleSet::currentRuleSetName = "<current>";
 
 IMPLEMENT_STATIC_BOOL_SETTING(DebugText, false)
 IMPLEMENT_STATIC_BOOL_SETTING(DebugImage, false)
@@ -95,7 +99,7 @@ std::vector<const char*> settings_dont_save {
 Settings::Settings() : mLoaded(false), mEmptyStringSet()
 {
 	setDefaults();
-	mCurrentTagRuleSet = new TagRuleSet("default");
+	mCurrentTagRuleSet = new TagRuleSet(TagRuleSet::defaultRuleSetName);
 	mTagRuleSets.insert(std::pair<std::string, TagRuleSet*>(mCurrentTagRuleSet->mName, mCurrentTagRuleSet));
 	loadFile();
 	mLoaded = true;
@@ -442,15 +446,15 @@ bool Settings::saveFile()
 			knownTagsNode.append_child("known-tag").text().set(tag.c_str());
 		}
 	}	
-	if (!mCurrentTag.empty())
+	if (!mCurrentTag.empty() || !knownTags.empty())
 	{
 		config.append_child("current-tag").text().set(mCurrentTag.c_str());
 	}
 	for (auto entry : mTagRuleSets)
 	{
-		// Don't bother writing default rule set if it's at defaults (ie. empty)
+		// Don't bother writing default rule set if it's at defaults (ie. empty) and there are no other rule sets.
 		auto tagRuleSet = entry.second;
-		if (tagRuleSet->mName == "default" && tagRuleSet->mExcludeTags.empty() && tagRuleSet->mIncludeTags.empty())
+		if (mTagRuleSets.size() == 1 && tagRuleSet->mName == TagRuleSet::defaultRuleSetName && tagRuleSet->empty())
 			continue;
 		auto tagRuleSetNode = config.append_child("tag-rule-set");
 		tagRuleSetNode.append_child("name").text().set(tagRuleSet->mName.c_str());
@@ -458,6 +462,11 @@ bool Settings::saveFile()
 			tagRuleSetNode.append_child("include-tag").text().set(tag.c_str());
 		for (auto tag : tagRuleSet->getExcludeTags())
 			tagRuleSetNode.append_child("exclude-tag").text().set(tag.c_str());
+	}
+	// Don't bother writing current rule name set if there's only the default one at default values (empty).
+	if (!(mTagRuleSets.size() == 1 && mTagRuleSets[TagRuleSet::defaultRuleSetName]->empty()))
+	{
+		config.append_child("current-tag-rule-set").text().set(mCurrentTagRuleSet->getName().c_str());
 	}
 
 	doc.save_file(path.c_str());
@@ -515,6 +524,8 @@ void Settings::loadFile()
 		for(pugi::xml_node excNode = tagRuleSetNode.child("exclude-tag"); excNode; excNode = excNode.next_sibling("exclude-tag"))
 			tagRuleSet->addExcludeTag(excNode.text().as_string());
 	}
+	for(pugi::xml_node currenRuleSetNode = root.child("current-tag-rule-set"); currenRuleSetNode; currenRuleSetNode = currenRuleSetNode.next_sibling("current-tag-rule-set"))
+		setCurrentRuleSet(currenRuleSetNode.text().as_string());
 
 	mWasChanged = false;
 }
@@ -700,7 +711,8 @@ const std::tuple<bool, std::string> Settings::setAsCurrentTag(bool next)
 
 void Settings::addIncludeTag(const std::string& value, std::string ruleSet)
 {
-	auto rs = mTagRuleSets.find(ruleSet);
+	std::string rsName = ruleSet == TagRuleSet::currentRuleSetName ? mCurrentTagRuleSet->getName() : ruleSet;
+	auto rs = mTagRuleSets.find(rsName);
 	if (rs == mTagRuleSets.end())
 		return;
 	bool changed = (*rs).second->addIncludeTag(value);
@@ -710,7 +722,8 @@ void Settings::addIncludeTag(const std::string& value, std::string ruleSet)
 
 void Settings::removeIncludeTag(const std::string& value, std::string ruleSet)
 {
-	auto rs = mTagRuleSets.find(ruleSet);
+	std::string rsName = ruleSet == TagRuleSet::currentRuleSetName ? mCurrentTagRuleSet->getName() : ruleSet;
+	auto rs = mTagRuleSets.find(rsName);
 	if (rs == mTagRuleSets.end())
 		return;
 	bool changed = (*rs).second->removeIncludeTag(value);
@@ -720,7 +733,8 @@ void Settings::removeIncludeTag(const std::string& value, std::string ruleSet)
 
 const std::set<std::string>& Settings::getIncludeTags(std::string ruleSet)
 {
-	auto rs = mTagRuleSets.find(ruleSet);
+	std::string rsName = ruleSet == TagRuleSet::currentRuleSetName ? mCurrentTagRuleSet->getName() : ruleSet;
+	auto rs = mTagRuleSets.find(rsName);
 	if (rs == mTagRuleSets.end())
 		return mEmptyStringSet;
 
@@ -729,7 +743,8 @@ const std::set<std::string>& Settings::getIncludeTags(std::string ruleSet)
 
 void Settings::addExcludeTag(const std::string& value, std::string ruleSet)
 {
-	auto rs = mTagRuleSets.find(ruleSet);
+	std::string rsName = ruleSet == TagRuleSet::currentRuleSetName ? mCurrentTagRuleSet->getName() : ruleSet;
+	auto rs = mTagRuleSets.find(rsName);
 	if (rs == mTagRuleSets.end())
 		return;
 	bool changed = (*rs).second->addExcludeTag(value);
@@ -739,7 +754,8 @@ void Settings::addExcludeTag(const std::string& value, std::string ruleSet)
 
 void Settings::removeExcludeTag(const std::string& value, std::string ruleSet)
 {
-	auto rs = mTagRuleSets.find(ruleSet);
+	std::string rsName = ruleSet == TagRuleSet::currentRuleSetName ? mCurrentTagRuleSet->getName() : ruleSet;
+	auto rs = mTagRuleSets.find(rsName);
 	if (rs == mTagRuleSets.end())
 		return;
 	bool changed = (*rs).second->removeExcludeTag(value);
@@ -749,7 +765,8 @@ void Settings::removeExcludeTag(const std::string& value, std::string ruleSet)
 
 const std::set<std::string>& Settings::getExcludeTags(std::string ruleSet)
 {
-	auto rs = mTagRuleSets.find(ruleSet);
+	std::string rsName = ruleSet == TagRuleSet::currentRuleSetName ? mCurrentTagRuleSet->getName() : ruleSet;
+	auto rs = mTagRuleSets.find(rsName);
 	if (rs == mTagRuleSets.end())
 		return mEmptyStringSet;
 
@@ -758,7 +775,8 @@ const std::set<std::string>& Settings::getExcludeTags(std::string ruleSet)
 
 bool Settings::canInclude(const std::set<std::string>& tags, std::string ruleSet)
 {
-	auto rs = mTagRuleSets.find(ruleSet);
+	std::string rsName = ruleSet == TagRuleSet::currentRuleSetName ? mCurrentTagRuleSet->getName() : ruleSet;
+	auto rs = mTagRuleSets.find(rsName);
 	if (rs == mTagRuleSets.end())
 		return false;
 
@@ -810,7 +828,18 @@ TagRuleSet* Settings::getOrCreateTagRuleSet(const std::string& name)
 		return mTagRuleSets[name];
 	auto r = new TagRuleSet(name);
 	mTagRuleSets.insert(std::pair<std::string, TagRuleSet*>(name, r));
+	mWasChanged = true;
 	return r;
+}
+
+const std::tuple<bool, TagRuleSet*> Settings::setCurrentRuleSet(std::string ruleSetName)
+{
+	if (mTagRuleSets.count(ruleSetName) == 0 || mCurrentTagRuleSet->getName() == ruleSetName)
+		return {false, mCurrentTagRuleSet};
+
+	mCurrentTagRuleSet = mTagRuleSets[ruleSetName];
+	mWasChanged = true;
+	return {true, mCurrentTagRuleSet};
 }
 
 TagRuleSet* Settings::getCurrentRuleSet()
@@ -838,14 +867,65 @@ const std::tuple<bool, std::string> Settings::setNextTuleSetAsCurrent()
 	return {false, nullptr};
 }
 
-TagRuleSet* Settings::addRuleSet()
+bool Settings::hasRuleSet(std::string ruleSetName)
 {
-	return nullptr;
+	return mTagRuleSets.count(ruleSetName) > 0;
 }
 
-TagRuleSet* Settings::deleteRuleSet()
+const std::tuple<bool, TagRuleSet*> Settings::addRuleSet(std::string ruleSetName)
 {
-	return nullptr;
+
+	if (mTagRuleSets.count(ruleSetName) > 0)
+		return {false, nullptr};
+
+	TagRuleSet *newRuleSet = getOrCreateTagRuleSet(ruleSetName);
+	return {true, newRuleSet};
+}
+
+const std::tuple<bool, TagRuleSet*> Settings::deleteRuleSet(std::string ruleSetName)
+{
+	if (mTagRuleSets.count(ruleSetName) == 0)
+		return {false, nullptr};
+
+	// Special case for default rule set: we want to always have one so just clear it
+	TagRuleSet *deletedRuleSet = mTagRuleSets[ruleSetName];
+	if (ruleSetName == TagRuleSet::defaultRuleSetName)
+	{
+		auto changed = deletedRuleSet->clear();
+		if (changed)
+			mWasChanged = true;
+		return {true, deletedRuleSet};
+	}
+
+	if (ruleSetName == mCurrentTagRuleSet->getName())
+	{
+		auto x = mTagRuleSets.find(ruleSetName);
+		if (x != mTagRuleSets.end()) {
+			// Set current rule set to next one if possible.
+			// Else Set current rule set to one before it if possible.
+			++x;
+			if (x != mTagRuleSets.end()) {
+				mCurrentTagRuleSet = (*x).second;
+			} else if (mTagRuleSets.size() > 1) {
+				// We're it the end, have at least 2 elements and we're removing the last one:
+				// decrement twice and we have the element just before the one deleted.
+				--x;
+				--x;
+				mCurrentTagRuleSet = (*x).second;
+			}
+		}
+	}
+	mTagRuleSets.erase(ruleSetName);
+
+	mWasChanged = true;
+	return {true, deletedRuleSet};
+}
+
+TagRuleSet* Settings::getRuleSet(std::string ruleSetName)
+{
+	if (mTagRuleSets.count(ruleSetName) == 0)
+		return nullptr;
+	return mTagRuleSets[ruleSetName];
 }
 
 TagRuleSet::TagRuleSet(std::string name) : mName(name)
@@ -855,6 +935,19 @@ TagRuleSet::TagRuleSet(std::string name) : mName(name)
 const std::string TagRuleSet::getName()
 {
 	return mName;
+}
+
+bool TagRuleSet::empty()
+{
+	return mIncludeTags.empty() && mExcludeTags.empty();
+}
+
+bool TagRuleSet::clear()
+{
+	bool changed = !mIncludeTags.empty() || !mExcludeTags.empty();
+	mIncludeTags.clear();
+	mExcludeTags.clear();
+	return changed;
 }
 
 bool TagRuleSet::addIncludeTag(const std::string& value)

@@ -18,6 +18,8 @@ public:
 	};
 
 	const std::string getName();
+	bool empty();
+	bool clear();
 
 	bool addIncludeTag(const std::string& value);
 	bool removeIncludeTag(const std::string& value);
@@ -28,6 +30,10 @@ public:
 	bool canInclude(const std::set<std::string>& tags);
 
 	bool deleteTag(const std::string& value);
+
+	static const std::string defaultRuleSetName;
+	// currentRuleSetName is not a real name: it's used to refer to current rule set
+	static const std::string currentRuleSetName;
 
 private:
 	friend class Settings;
@@ -108,20 +114,23 @@ public:
 	const std::tuple<bool, std::string> setPrevTagAsCurrent();
 	const std::tuple<bool, std::string> setNextTagAsCurrent();
 
-	void addIncludeTag(const std::string& value, std::string ruleSet = "default");
-	void removeIncludeTag(const std::string& value, std::string ruleSet = "default");
-	const std::set<std::string>& getIncludeTags(std::string ruleSet = "default");
-	void addExcludeTag(const std::string& value, std::string ruleSet = "default");
-	void removeExcludeTag(const std::string& value, std::string ruleSet = "default");
-	const std::set<std::string>& getExcludeTags(std::string ruleSet = "default");
-	bool canInclude(const std::set<std::string>& tags, std::string ruleSet = "default");
+	void addIncludeTag(const std::string& value, std::string ruleSet = TagRuleSet::currentRuleSetName);
+	void removeIncludeTag(const std::string& value, std::string ruleSet = TagRuleSet::currentRuleSetName);
+	const std::set<std::string>& getIncludeTags(std::string ruleSet = TagRuleSet::currentRuleSetName);
+	void addExcludeTag(const std::string& value, std::string ruleSet = TagRuleSet::currentRuleSetName);
+	void removeExcludeTag(const std::string& value, std::string ruleSet = TagRuleSet::currentRuleSetName);
+	const std::set<std::string>& getExcludeTags(std::string ruleSet = TagRuleSet::currentRuleSetName);
+	bool canInclude(const std::set<std::string>& tags, std::string ruleSet = TagRuleSet::currentRuleSetName);
 
+	const std::tuple<bool, TagRuleSet*> setCurrentRuleSet(std::string ruleSetName);
 	TagRuleSet* getCurrentRuleSet();
 	const std::vector<std::string> getRuleSetNames();
 	const std::tuple<bool, std::string> setPrevRuleSetAsCurrent();
 	const std::tuple<bool, std::string> setNextTuleSetAsCurrent();
-	TagRuleSet* addRuleSet();
-	TagRuleSet* deleteRuleSet();
+	bool hasRuleSet(std::string ruleSetName);
+	const std::tuple<bool, TagRuleSet*> addRuleSet(std::string ruleSetName);
+	const std::tuple<bool, TagRuleSet*> deleteRuleSet(std::string ruleSetName);
+	TagRuleSet* getRuleSet(std::string ruleSetName);
 
 	// Cached settings using static fields. They must be implemented using IMPLEMENT_STATIC_xx_SETTING & updated with UPDATE_STATIC_xxx_SETTING
 	DECLARE_STATIC_BOOL_SETTING(DebugText)

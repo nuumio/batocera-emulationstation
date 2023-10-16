@@ -9,8 +9,9 @@
 #include "guis/GuiTextEditPopupKeyboard.h"
 #include "guis/GuiMsgBox.h"
 #include "FileData.h"
+#include "views/ViewController.h"
 
-GuiTagsManager::GuiTagsManager(Window* window, SystemData* system) : GuiComponent(window), mMenu(window, _("TAGS MANAGER")), mSystem(system)
+GuiTagsManager::GuiTagsManager(Window* window, bool reloadAfterClose) : GuiComponent(window), mMenu(window, _("TAGS MANAGER")), mReloadAfterClose(reloadAfterClose)
 {
 	mCurrentTagSelect = std::make_shared<OptionListComponent<std::string>>(mWindow, _("CURRENT TAG"), false, false, false);
 	mCurrentRuleSetSelect = std::make_shared<OptionListComponent<std::string>>(mWindow, _("CURRENT RULE SET"), false, false, false);
@@ -68,14 +69,18 @@ void GuiTagsManager::close()
 	settings->setCurrentTag(currentTag);
 	auto currentRuleSet = mCurrentRuleSetSelect->getSelected();
 	settings->setCurrentRuleSet(currentRuleSet);
-	settings->saveFile();
+	auto changed = settings->saveFile();
 
 	auto finalize = mOnFinalizeFunc;
+	auto window = mWindow;
 
 	delete this;
 
 	if (finalize != nullptr)
 		finalize();
+
+	if (changed && mReloadAfterClose)
+		ViewController::get()->reloadAllGames(window);
 }
 
 void GuiTagsManager::addCurrentTagSelectorToMenu()

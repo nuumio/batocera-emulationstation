@@ -13,7 +13,7 @@ class SystemData;
 class GuiTagsManager : public GuiComponent
 {
 public:
-	GuiTagsManager(Window* window, SystemData* system);
+	GuiTagsManager(Window* window, bool reloadAfterClose = false);
 
 	~GuiTagsManager();
 	bool input(InputConfig* config, Input input) override;
@@ -39,6 +39,7 @@ private:
 
 	MenuComponent mMenu;
 	SystemData* mSystem;
+	bool mReloadAfterClose;
 
 	std::shared_ptr<OptionListComponent<std::string>> mCurrentTagSelect;
 	std::shared_ptr<OptionListComponent<std::string>> mCurrentRuleSetSelect;

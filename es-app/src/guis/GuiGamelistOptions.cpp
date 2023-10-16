@@ -427,7 +427,7 @@ void GuiGamelistOptions::openTagsManager()
 {
 	mReloadAll = false;
 	mFiltersChanged = true;
-	GuiTagsManager* gtm = new GuiTagsManager(mWindow, mSystem);
+	GuiTagsManager* gtm = new GuiTagsManager(mWindow, true);
 	mWindow->pushGui(gtm);
 }
 

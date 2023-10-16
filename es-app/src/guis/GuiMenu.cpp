@@ -3359,7 +3359,7 @@ void GuiMenu::openQuitMenu_static(Window *window, bool quickAccessMenu, bool ani
 
 		s->addEntry(_("TAGS MANAGER"), true, [s, window]()
 		{
-			GuiTagsManager* gtm = new GuiTagsManager(window);
+			GuiTagsManager* gtm = new GuiTagsManager(window, true);
 			window->pushGui(gtm);
 			delete s;
 		});

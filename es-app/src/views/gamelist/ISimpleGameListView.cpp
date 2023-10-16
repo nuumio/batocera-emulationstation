@@ -426,7 +426,7 @@ void ISimpleGameListView::releaseDownInputs()
 
 void ISimpleGameListView::showTagsManager()
 {
-	GuiTagsManager* gtm = new GuiTagsManager(mWindow, getCursor()->getSystem());
+	GuiTagsManager* gtm = new GuiTagsManager(mWindow, true);
 	mWindow->pushGui(gtm);
 }
 

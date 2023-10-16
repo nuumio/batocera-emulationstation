@@ -57,8 +57,8 @@ std::vector<HelpPrompt> GuiTagRuleEditor::getHelpPrompts()
 
 void GuiTagRuleEditor::close()
 {
+	// NOTE: Settings are saved from GuiTagManager::close()
 	auto finalize = mOnFinalizeFunc;
-	Settings::getInstance()->saveFile();
 
 	delete this;
 

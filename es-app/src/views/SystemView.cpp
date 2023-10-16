@@ -586,7 +586,7 @@ void SystemView::releaseDownInputs()
 
 void SystemView::showTagsManager()
 {
-	GuiTagsManager* gtm = new GuiTagsManager(mWindow);
+	GuiTagsManager* gtm = new GuiTagsManager(mWindow, true);
 	mWindow->pushGui(gtm);
 }
 

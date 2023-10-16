@@ -53,11 +53,21 @@ private:
 			OptionListData* item;
 		};
 
+		std::string fmtName(OptionListData &data)
+		{
+			if (mAllCaps)
+				return Utils::String::toUpper(data.name);
+			return data.name;
+		}
+
+		bool mAllCaps;
+
+
 		std::vector<CheckBoxElement> mCheckBoxes;
 
 	public:
-		OptionListPopup(Window* window, OptionListComponent<T>* parent, const std::string& title, const std::function<void(T& data, ComponentListRow& row)> callback = nullptr) : GuiComponent(window),
-			mMenu(window, title.c_str()), mParent(parent)
+		OptionListPopup(Window* window, OptionListComponent<T>* parent, const std::string& title, const std::function<void(T& data, ComponentListRow& row)> callback = nullptr, bool allCaps = true) : GuiComponent(window),
+			mMenu(window, title.c_str()), mParent(parent), mAllCaps(allCaps)
 		{
 			auto menuTheme = ThemeData::getMenuTheme();
 			auto font = menuTheme->Text.font;
@@ -100,10 +110,10 @@ private:
 				else
 				{
 					if (!it->description.empty())
-						row.addElement(std::make_shared<MultiLineMenuEntry>(mWindow, Utils::String::toUpper(it->name), it->description), true);
+						row.addElement(std::make_shared<MultiLineMenuEntry>(mWindow, fmtName(*it), it->description), true);
 					else
 					{
-						auto text = std::make_shared<TextComponent>(mWindow, e.treeChild ? "      " + Utils::String::toUpper(it->name) : Utils::String::toUpper(it->name), font, color);
+						auto text = std::make_shared<TextComponent>(mWindow, e.treeChild ? "      " + fmtName(*it) : fmtName(*it), font, color);
 						if (EsLocale::isRTL())
 							text->setHorizontalAlignment(Alignment::ALIGN_RIGHT);
 
@@ -208,8 +218,8 @@ private:
 	};
 
 public:
-	OptionListComponent(Window* window, const std::string& name, bool multiSelect = false, bool multiSelectShowNames = false) : GuiComponent(window), mMultiSelect(multiSelect), mName(name),
-		 mText(window), mLeftArrow(window), mRightArrow(window), mMultiSelectShowNames(multiSelectShowNames)
+	OptionListComponent(Window* window, const std::string& name, bool multiSelect = false, bool multiSelectShowNames = false, bool allCaps = true) : GuiComponent(window), mMultiSelect(multiSelect), mName(name),
+		 mText(window), mLeftArrow(window), mRightArrow(window), mMultiSelectShowNames(multiSelectShowNames), mAllCaps(allCaps)
 	{
 		auto theme = ThemeData::getMenuTheme();
 
@@ -568,7 +578,7 @@ private:
 
 	void open()
 	{
-		mWindow->pushGui(new OptionListPopup(mWindow, this, mName, mAddRowCallback));
+		mWindow->pushGui(new OptionListPopup(mWindow, this, mName, mAddRowCallback, mAllCaps));
 	}
 
 	void onSelectedChanged()
@@ -618,7 +628,7 @@ private:
 			{
 				if(it->selected)
 				{
-					mText.setText(Utils::String::toUpper(it->name));
+					mText.setText(fmtName(*it));
 					mText.setSize(0, mText.getSize().y());
 					setSize(mText.getSize().x() + mLeftArrow.getSize().x() + mRightArrow.getSize().x() + 24, mText.getSize().y());
 					onSizeChanged();
@@ -643,8 +653,16 @@ private:
 		return prompts;
 	}
 
+	std::string fmtName(const OptionListData &data)
+	{
+		if (mAllCaps)
+			return Utils::String::toUpper(data.name);
+		return data.name;
+	}
+
 	bool mMultiSelect;
 	bool mMultiSelectShowNames;
+	bool mAllCaps;
 
 	std::string mName;
 	std::string mGroup;

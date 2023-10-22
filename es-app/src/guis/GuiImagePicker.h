@@ -19,6 +19,7 @@ public:
 	inline void onImagePicked(const std::function<void(std::string)>& func) { mOnImagedPicked = func; };
 
 	void add(const std::string imagePath, const std::string name);
+	void setCursor(const std::string imagePath);
 
 private:
 	std::function<void(std::string)> mOnImagedPicked;

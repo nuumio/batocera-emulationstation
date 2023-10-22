@@ -124,3 +124,10 @@ void GuiImagePicker::add(const std::string imagePath, const std::string name)
 {
 	mGrid.add(name, imagePath, imagePath, "", false, false, false, false, imagePath);
 }
+
+void GuiImagePicker::setCursor(const std::string imagePath)
+{
+	mGrid.resetLastCursor();
+	mGrid.setCursor(imagePath);
+	mGrid.onShow();
+}

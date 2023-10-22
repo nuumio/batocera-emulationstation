@@ -580,8 +580,11 @@ void GuiGameOptions::openImagePicker(ImagePickDir pickDir)
 		return first.path.compare(second.path) < 0;
 	});
 
+	auto gameListView = ViewController::get()->getGameListView(file->getSystem());
+	auto opacityOrig = gameListView->getOpacity();
+	gameListView->setOpacity(63);
 	auto imagePicker = new GuiImagePicker(mWindow);
-	imagePicker->onImagePicked([file, imagesFolder, pickDir, gamelistFolder, exts, this](std::string picked)
+	imagePicker->onImagePicked([file, imagesFolder, pickDir, gamelistFolder, exts, gameListView, opacityOrig, this](std::string picked)
 	{
 		std::string fileImage;
 		if (pickDir == SCREENSHOTS)
@@ -617,6 +620,11 @@ void GuiGameOptions::openImagePicker(ImagePickDir pickDir)
 		}
 		file->setMetadata(MetaDataId::Image, fileImage);
 		ViewController::get()->onFileChanged(file, FILE_METADATA_CHANGED);
+		gameListView->setOpacity(opacityOrig);
+	});
+	imagePicker->onCancel([gameListView, opacityOrig]()
+	{
+		gameListView->setOpacity(opacityOrig);
 	});
 	auto currentImagePath = file->getImagePath();
 	std::string cursorPath;

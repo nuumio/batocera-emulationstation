@@ -32,10 +32,10 @@ GuiImagePicker::GuiImagePicker(Window* window, Vector2f gridSize) : GuiComponent
 		"<view name = \"grid\">"
 		"<imagegrid name=\"gamegrid\">"
 		"  <margin>0 0</margin>"
-		"  <padding>0 0</padding>"
+		"  <padding>0.02 0.05</padding>"
 		"  <pos>0 0</pos>"
 		"  <size>1 1</size>"
-		"  <scrollDirection>vertical</scrollDirection>"		
+		"  <scrollDirection>vertical</scrollDirection>"
 		"  <autoLayout>1 1</autoLayout>"
 		"  <autoLayoutSelectedZoom>1</autoLayoutSelectedZoom>"
 		"  <animateSelection>false</animateSelection>"
@@ -44,7 +44,7 @@ GuiImagePicker::GuiImagePicker(Window* window, Vector2f gridSize) : GuiComponent
 		"  <showVideoAtDelay>10</showVideoAtDelay>"
 		"</imagegrid>"
 		"<gridtile name=\"default\">"
-		"  <backgroundColor>FFFFFF00</backgroundColor>"		
+		"  <backgroundColor>FFFFFF00</backgroundColor>"
 		"  <selectionMode>image</selectionMode>"
 		"  <padding>4 4</padding>"
 		"  <margin>1 1</margin>"
@@ -78,7 +78,7 @@ GuiImagePicker::GuiImagePicker(Window* window, Vector2f gridSize) : GuiComponent
 
 	mGrid.applyTheme(mTheme, "grid", "gamegrid", 0);
 
-	animateTo(Vector2f(0, Renderer::getScreenHeight()), Vector2f(0, 0));
+	animateTo(Vector2f(0, Renderer::getScreenHeight()), Vector2f(0.05, 0.05));
 }
 
 GuiImagePicker::~GuiImagePicker()

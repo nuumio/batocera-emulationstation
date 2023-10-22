@@ -111,6 +111,7 @@ std::vector<HelpPrompt> GuiImagePicker::getHelpPrompts()
 void GuiImagePicker::close(bool pickSelectedImage)
 {
 	auto onImagePicked = mOnImagedPicked;
+	auto onCancel = mOnCancel;
 	auto window = mWindow;
 	auto selected = mGrid.getSelected();
 
@@ -118,6 +119,8 @@ void GuiImagePicker::close(bool pickSelectedImage)
 
 	if (pickSelectedImage && onImagePicked != nullptr)
 		onImagePicked(selected);
+	if (!pickSelectedImage && onCancel != nullptr)
+		onCancel();
 }
 
 void GuiImagePicker::add(const std::string imagePath, const std::string name)

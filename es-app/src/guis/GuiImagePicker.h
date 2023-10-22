@@ -17,12 +17,14 @@ public:
 	bool input(InputConfig* config, Input input) override;
 	virtual std::vector<HelpPrompt> getHelpPrompts() override;
 	inline void onImagePicked(const std::function<void(std::string)>& func) { mOnImagedPicked = func; };
+	inline void onCancel(const std::function<void()>& func) { mOnCancel = func; };
 
 	void add(const std::string imagePath, const std::string name);
 	void setCursor(const std::string imagePath);
 
 private:
 	std::function<void(std::string)> mOnImagedPicked;
+	std::function<void()> mOnCancel;
 
 	void close(bool pickSelectedImage);
 

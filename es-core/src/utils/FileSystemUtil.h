@@ -5,6 +5,7 @@
 #include <list>
 #include <string>
 #include <vector>
+#include <functional>
 #include "utils/TimeUtil.h"
 
 namespace Utils
@@ -13,7 +14,7 @@ namespace Utils
 	{
 		typedef std::list<std::string> stringList;
 		
-		stringList  getDirContent      (const std::string& _path, const bool _recursive = false, const bool includeHidden = false);
+		stringList  getDirContent      (const std::string& _path, const bool _recursive = false, const bool includeHidden = false, const std::function<bool(std::string)>& filter = nullptr);
 		std::vector<std::string>  getPathList        (const std::string& _path);
 		std::string getCWDPath         ();
 		std::string getPreferredPath   (const std::string& _path);

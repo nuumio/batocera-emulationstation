@@ -206,7 +206,7 @@ namespace Utils
 
 	// Methods
 
-		stringList getDirContent(const std::string& _path, const bool _recursive, const bool includeHidden)
+		stringList getDirContent(const std::string& _path, const bool _recursive, const bool includeHidden, const std::function<bool(std::string)>& filter)
 		{
 			std::string path = getGenericPath(_path);
 			stringList  contentList;
@@ -242,12 +242,14 @@ namespace Utils
 						if (!includeHidden && (findData.dwFileAttributes & FILE_ATTRIBUTE_HIDDEN) == FILE_ATTRIBUTE_HIDDEN)
 							continue;
 
-						contentList.push_back(fullName);						
+						if (filter == nullptr || filter(fullName))
+							contentList.push_back(fullName);
 
 						if (_recursive && (findData.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) == FILE_ATTRIBUTE_DIRECTORY)
 						{
 							for (auto item : getDirContent(fullName, true, includeHidden))
-								contentList.push_back(item);
+								if (filter == nullptr || filter(fullName))
+									contentList.push_back(item);
 						}
 					}
 					while(FindNextFileW(hFind, &findData));
@@ -277,12 +279,14 @@ namespace Utils
 							if (!includeHidden && cache.hidden)
 								continue;
 
-							contentList.push_back(fullName);
+							if (filter == nullptr || filter(fullName))
+								contentList.push_back(fullName);
 
 							if (_recursive && cache.directory)
 							{
 								for (auto item : getDirContent(fullName, true, includeHidden))
-									contentList.push_back(item);
+									if (filter == nullptr || filter(fullName))
+										contentList.push_back(item);
 							}
 						}
 					}

@@ -6,7 +6,10 @@
 #include <string>
 #include <vector>
 #include <functional>
+#include <sys/types.h>
 #include "utils/TimeUtil.h"
+
+bool operator <(const timespec& lhs, const timespec& rhs);
 
 namespace Utils
 {
@@ -52,12 +55,14 @@ namespace Utils
 			bool directory;
 #if WIN32
 			time_t lastWriteTime;
+#else
+			struct timespec mtim;
 #endif
 		};
 
 		typedef std::list<FileInfo> fileList;
 
-		fileList	getDirectoryFiles(const std::string& _path);
+		fileList	getDirectoryFiles(const std::string& _path, const std::function<bool(std::string)>& pathFilter = nullptr, const std::function<bool(FileInfo&)>& fileInfoFilter = nullptr);
 		std::string combine(const std::string& _path, const std::string& filename);
 		unsigned long long	getFileSize(const std::string& _path);
 

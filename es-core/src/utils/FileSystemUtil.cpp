@@ -35,6 +35,14 @@
 
 #include "Paths.h"
 
+bool operator <(const timespec &lhs, const timespec &rhs)
+{
+	if (lhs.tv_sec == rhs.tv_sec)
+		return lhs.tv_nsec < rhs.tv_nsec;
+	else
+		return lhs.tv_sec < rhs.tv_sec;
+}
+
 namespace Utils
 {
 	namespace FileSystem
@@ -316,7 +324,7 @@ namespace Utils
 		}
 #endif
 
-		fileList getDirectoryFiles(const std::string& _path)
+		fileList getDirectoryFiles(const std::string& _path, const std::function<bool(std::string)>& pathFilter, const std::function<bool(FileInfo&)>& fileInfoFilter)
 		{
 			std::string path = getGenericPath(_path);
 			fileList  contentList;
@@ -404,23 +412,37 @@ namespace Utils
 						if ((name != ".") && (name != ".."))
 						{
 							std::string fullName(getGenericPath(path + "/" + name));
-
+							if (pathFilter != nullptr && !pathFilter(fullName))
+								continue;
 							FileInfo fi;
+							struct stat64 si;
 							fi.path = fullName;
 							fi.hidden = Utils::FileSystem::isHidden(fullName);
+							fi.mtim = {0, 0};
 
 							if (entry->d_type == 10) // DT_LNK
 							{
-								struct stat64 si;
 								if (stat64(resolveSymlink(fullName).c_str(), &si) == 0)
+								{
 									fi.directory = S_ISDIR(si.st_mode);
+									fi.mtim = si.st_mtim;
+								}
 								else
 									fi.directory = false;
 							}
 							else
+							{
+								if (stat64(fullName.c_str(), &si) == 0)
+								{
+									fi.mtim = si.st_mtim;
+								}
 								fi.directory = (entry->d_type == 4); // DT_DIR;
+							}
 
 							FileCache::add(fullName, FileCache(fullName, entry, fi.hidden));
+
+							if (fileInfoFilter != nullptr && !fileInfoFilter(fi))
+								continue;
 
 							//DT_LNK
 							contentList.push_back(fi);

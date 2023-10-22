@@ -28,10 +28,15 @@ public:
 	virtual bool onMouseClick(int button, bool pressed, int x, int y);
 
 private:
+	enum ImagePickDir {
+		SCREENSHOTS,
+		IMAGES,
+	};
 	static void deleteGame(FileData* file);
 
 	inline void addSaveFunc(const std::function<void()>& func) { mSaveFuncs.push_back(func); };		
 	void openMetaDataEd();
+	void openImagePicker(ImagePickDir pickDir);
 
 	std::string getCustomCollectionName();
 	void deleteCollection();

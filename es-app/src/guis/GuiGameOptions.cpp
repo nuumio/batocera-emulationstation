@@ -1,6 +1,10 @@
+#include <algorithm>
+#include <string>
+#include "FileData.h"
 #include "GuiGameOptions.h"
 #include "guis/GuiGamelistFilter.h"
 #include "scrapers/Scraper.h"
+#include "utils/FileSystemUtil.h"
 #include "views/gamelist/IGameListView.h"
 #include "views/UIModeController.h"
 #include "views/ViewController.h"
@@ -26,6 +30,7 @@
 #include "SaveStateRepository.h"
 #include "guis/GuiSaveState.h"
 #include "SystemConf.h"
+#include "guis/GuiImagePicker.h"
 
 GuiGameOptions::GuiGameOptions(Window* window, FileData* game) : GuiComponent(window),
 	mMenu(window, game->getName()), mReloadAll(false)
@@ -403,7 +408,11 @@ GuiGameOptions::GuiGameOptions(Window* window, FileData* game) : GuiComponent(wi
 		if (game->getType() == FOLDER)
 			mMenu.addEntry(_("EDIT FOLDER METADATA"), false, std::bind(&GuiGameOptions::openMetaDataEd, this));
 		else
+		{
 			mMenu.addEntry(_("EDIT THIS GAME'S METADATA"), false, std::bind(&GuiGameOptions::openMetaDataEd, this));
+			mMenu.addEntry(_("PICK IMAGE FROM IMAGES"), false, std::bind(&GuiGameOptions::openImagePicker, this, IMAGES));
+			mMenu.addEntry(_("PICK IMAGE FROM SCREENSHOTS"), false, std::bind(&GuiGameOptions::openImagePicker, this, SCREENSHOTS));
+		}
 	}
 	else if (game->hasKeyboardMapping())
 	{
@@ -520,6 +529,119 @@ void GuiGameOptions::openMetaDataEd()
 		std::bind(&ViewController::onFileChanged, ViewController::get(), file, FILE_METADATA_CHANGED), deleteBtnFunc, file));
 
 	close();
+}
+
+void GuiGameOptions::openImagePicker(ImagePickDir pickDir)
+{
+	if (ThreadedScraper::isRunning() || ThreadedHasher::isRunning())
+	{
+		mWindow->pushGui(new GuiMsgBox(mWindow, _("THIS FUNCTION IS DISABLED WHILE THE SCRAPER IS RUNNING")));
+		return;
+	}
+
+	FileData* file = mGame;
+	if (file->getType() != GAME)
+	{
+		return;
+	}
+
+	auto gamelistPath = file->getSystem()->getGamelistPath(false);
+	auto gamelistFolder = Utils::FileSystem::getParent(gamelistPath);
+	auto imagesFolder = Utils::FileSystem::resolveRelativePath("./images", gamelistFolder, true);
+	if (pickDir == IMAGES && !Utils::FileSystem::exists(imagesFolder))
+	{
+		mWindow->displayNotificationMessage(_U("\uF05E ") +
+			Utils::String::format(_(
+				"NO IMAGES DIRECTORY FOUND: %s").c_str(), imagesFolder.c_str()), 4000);
+		return;
+	}
+
+	// TODO: Maybe use `Paths::getScreenShotPath();`
+	auto pickPath = pickDir == SCREENSHOTS ? SCREENSHOTS_PATH : imagesFolder;
+	std::array<std::string, 4> exts = {".png", ".jpg", ".jpeg", ".gif"};
+
+	auto images = Utils::FileSystem::getDirectoryFiles(pickPath, [exts](std::string path) -> bool
+	{
+		for (auto ext : exts)
+		{
+			if (path.ends_with(ext)) return true;
+		}
+		return false;
+	});
+	if (images.empty())
+	{
+		mWindow->displayNotificationMessage(_U("\uF05E ") +
+			Utils::String::format(_(
+				"NO IMAGES IN DIRECTORY: %s").c_str(), pickPath.c_str()), 4000);
+		return;
+	}
+	images.sort([](const Utils::FileSystem::FileInfo &first, const Utils::FileSystem::FileInfo &second)
+	{
+		return first.path.compare(second.path) < 0;
+	});
+
+	auto imagePicker = new GuiImagePicker(mWindow);
+	imagePicker->onImagePicked([file, imagesFolder, pickDir, gamelistFolder, exts, this](std::string picked)
+	{
+		std::string fileImage;
+		if (pickDir == SCREENSHOTS)
+		{
+			auto pickedExt = Utils::FileSystem::getExtension(picked, true);
+			auto fname = Utils::FileSystem::getStem(file->getPath());
+			auto imageBase = imagesFolder + "/" + fname;
+			auto imageTarget = imageBase + pickedExt;
+			auto imageExists = [exts](std::string base) -> bool
+			{
+				for (auto ext : exts)
+				{
+					if (Utils::FileSystem::exists(base + ext)) return true;
+				}
+				return false;
+			};
+			int n = 0;
+			// NOTE: _5 image may we overwrite by at the moment! (To prevent images folder flooding if images are changed many times).
+			while (n < 5)
+			{
+				if (!imageExists(imageBase)) break;
+				++n;
+				imageBase = imagesFolder + "/" + fname + "_" + std::to_string(n);
+				imageTarget = imageBase + pickedExt;
+			}
+
+			Utils::FileSystem::copyFile(picked, imageTarget);
+			fileImage = Utils::FileSystem::createRelativePath(imageTarget, gamelistFolder, true);
+		}
+		else
+		{
+			fileImage = Utils::FileSystem::createRelativePath(picked, gamelistFolder, true);
+		}
+		file->setMetadata(MetaDataId::Image, fileImage);
+		ViewController::get()->onFileChanged(file, FILE_METADATA_CHANGED);
+	});
+	auto currentImagePath = file->getImagePath();
+	std::string cursorPath;
+	struct timespec maxTime = {0, 0};
+	for (auto image : images)
+	{
+		imagePicker->add(image.path, Utils::FileSystem::getStem(image.path));
+		if (pickDir == SCREENSHOTS)
+		{
+			if (maxTime < image.mtim)
+			{
+				maxTime = image.mtim;
+				cursorPath = image.path;
+			}
+		}
+		else
+			if (image.path == currentImagePath)
+				cursorPath = image.path;
+		if (!cursorPath.empty())
+		{
+			imagePicker->setCursor(cursorPath);
+		}
+	}
+
+	mWindow->pushGui(imagePicker);
 }
 
 bool GuiGameOptions::input(InputConfig* config, Input input)

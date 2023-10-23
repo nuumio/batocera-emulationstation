@@ -643,10 +643,10 @@ void GuiGameOptions::openImagePicker(ImagePickDir pickDir)
 		else
 			if (image.path == currentImagePath)
 				cursorPath = image.path;
-		if (!cursorPath.empty())
-		{
-			imagePicker->setCursor(cursorPath);
-		}
+	}
+	if (!cursorPath.empty())
+	{
+		imagePicker->setCursor(cursorPath);
 	}
 
 	mWindow->pushGui(imagePicker);

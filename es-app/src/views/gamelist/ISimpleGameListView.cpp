@@ -402,12 +402,14 @@ void ISimpleGameListView::changeCurrentTag(bool next)
 void ISimpleGameListView::onHide() {
 	// Called on app exit too (at least when closing window in windowed mode)
 	saveSettings();
+	IGameListView::onHide();
 }
 
 void ISimpleGameListView::topWindow(bool isTop)
 {
 	releaseDownInputs();
 	saveSettings();
+	IGameListView::topWindow(isTop);
 }
 
 void ISimpleGameListView::saveSettings()
